@@ -273,8 +273,14 @@ result, not a bug.
 ## Packaging for upload
 
 ```bash
-./scripts/package.sh        # → dist/tg-claude-connector-plugin-<version>.zip
+./scripts/package.sh   # → ../tg-claude-connector-plugin-<version>.zip
 ```
+
+**Never compress the repo folder yourself.** Right-click → Compress produces four
+things that break the upload: a wrapper directory, `__MACOSX/` resource forks, the
+whole `.git/` history, and — if any built archive is inside the folder — **a zip
+nested inside a zip, which is rejected outright**. That is why `package.sh` writes
+its output one level *above* the repo: nothing inside the folder is ever a zip.
 
 **The plugin root must be the archive root.** `.claude-plugin/plugin.json` has to
 sit at the top level of the zip with `references/` and `skills/` beside it. An

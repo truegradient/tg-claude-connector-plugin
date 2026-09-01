@@ -9,7 +9,9 @@
 # plugin: it wraps everything in <repo>-<branch>/. Ship the artifact this script
 # builds as a release asset instead.
 #
-#   ./scripts/package.sh            → dist/tg-claude-connector-plugin-<version>.zip
+#   ./scripts/package.sh   → ../tg-claude-connector-plugin-<version>.zip
+#                          (one level ABOVE the repo, so it can never be
+#                           nested inside a zip of the repo itself)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,8 +21,10 @@ command -v zip >/dev/null || { echo "zip not found" >&2; exit 1; }
   echo "verify-plugin.sh failed — not packaging. Run it to see why." >&2; exit 1; }
 
 version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | /usr/bin/head -1)
-out="dist/tg-claude-connector-plugin-${version}.zip"
-mkdir -p dist
+# Written OUTSIDE the repo on purpose: an archive sitting inside the folder
+# gets swallowed if anyone compresses the folder, producing a nested zip that
+# will not upload.
+out="../tg-claude-connector-plugin-${version}.zip"
 rm -f "$out"
 
 find . -name '.DS_Store' -not -path './.git/*' -delete

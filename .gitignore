@@ -17,5 +17,4 @@
 .vscode/
 
 # Build artefacts — the packaged plugin is a release asset, not a tracked file
-dist/
 *.zip
