@@ -192,14 +192,44 @@ unpaired month. Report the window, the family and the lag.
 Repeat the a_/f_/e_ triple for every eligible month in the same call. If
 `returned == page_size`, the result was truncated — say so.
 
-**The stored path returns rows, so it paginates.** Stored metric columns live at
-row grain and cannot be rolled up by the engine — `avg` would misweight them
-(rule 5c) — so a group-level answer means reading the rows and weighting them
-yourself. Use `has_more` / `next_page` and read to the end. If you stop early,
-the ranking is built on part of the portfolio: say exactly how many rows of how
-many you read, and do not present a partial read as a ranking. When the row count
-makes a full read impractical, narrow with `filters` to the segment the user asked
-about rather than truncating silently.
+**The stored path returns rows — and it does NOT paginate. Do not loop.**
+
+`select_columns` makes the call a computed read, where **`page` is ignored** and
+`has_more` / `next_page` are returned anyway and simply increment. Measured:
+`page: 1` and `page: 500` returned the identical rows, both saying
+`has_more: true`. A loop following `next_page` re-reads the first page forever, and
+accumulating those pages counts the same rows repeatedly — a plausible, wrong
+total. `page_size` caps at 1,000, so one computed read can never see more than
+1,000 of a 2,379-row dataset. See `../../references/TOOL-GUIDE.md` rule 3b.
+
+Cover the portfolio one of these two ways instead:
+
+```
+PREFERRED — no row read at all:
+  group_by [<grain>, "trust_zone"]
+  aggregations: count, sum("% Contribution Last 3 Months"),
+                avg("overall_accuracy")
+  One row per group, no pagination, nothing to double count. This gives the
+  zone distribution and the volume in each zone directly — which is what the
+  ranking in 9a needs.
+
+IF you genuinely need row-level values:
+  partition with filters, one call per grain value, each slice under page_size:
+      filters=[{"column": "<grain>", "operator": "=", "value": "<one value>"}]
+  Verify each slice returned < page_size. A slice at page_size was truncated —
+  split it further.
+```
+
+Then say how many rows you covered of how many the dataset holds. If you could
+not cover them all, the figure is partial and must be labelled partial — never
+present a partial read as a portfolio ranking.
+
+**Note the tension with rule 5c.** `avg` on a stored percentage misweights, and a
+full row read is not available, so a group-level stored accuracy is either
+volume-weighted from per-group `avg` and `sum(contribution)` — an approximation,
+say so — or computed from `sum` aggregations per `METRICS.md` §2 and labelled
+derived. Measured, the gap is real: plain `avg` gave 1.47% where volume-weighted
+gave 13.87% and the sum-based computation gave 26.38%. Name which one you used.
 
 **8. Assemble the four inputs per item or group.**
 

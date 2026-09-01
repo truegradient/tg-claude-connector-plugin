@@ -1,0 +1,37 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "truegradient",
+  "description": "TrueGradient AI plugins for Claude Code",
+  "owner": {
+    "name": "TrueGradient AI",
+    "email": "support@truegradient.ai",
+    "url": "https://truegradient.ai"
+  },
+  "plugins": [
+    {
+      "name": "truegradient-forecast-plugin",
+      "source": "./",
+      "description": "TrueGradient Planning Analysis — five skills that make Claude answer demand, supply and inventory questions from final, approved TrueGradient data only: forecast lookup with uncertainty intervals, accuracy and bias measurement, forecast-risk ranking, forecast-family change comparison, and supply/inventory analysis covering stock position, coverage, stockout timing, reorder plans and excess. Requires the TrueGradient AI connector.",
+      "author": {
+        "name": "TrueGradient AI",
+        "email": "support@truegradient.ai",
+        "url": "https://truegradient.ai"
+      },
+      "homepage": "https://www.truegradient.ai/integrations/claude-connector",
+      "repository": "https://github.com/truegradient/tg-claude-connector-plugin",
+      "license": "UNLICENSED",
+      "category": "data",
+      "keywords": [
+        "forecasting",
+        "demand-planning",
+        "supply-chain",
+        "forecast-accuracy",
+        "truegradient",
+        "inventory-optimization",
+        "inventory",
+        "supply-planning",
+        "s&op"
+      ]
+    }
+  ]
+}

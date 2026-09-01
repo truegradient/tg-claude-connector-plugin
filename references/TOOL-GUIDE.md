@@ -262,6 +262,48 @@ In computed mode with no `limit`, if `returned == page_size` the result was
 truncated and a larger `page_size` would show more. With an explicit `limit`,
 `returned == limit` is the intended size, not truncation.
 
+**Rule 3b — `page` does NOT work in computed mode, and `has_more` lies there.**
+
+Passing any of `filters`, `group_by`, `aggregations`, `sort_by`, `select_columns`,
+`limit` or `distinct` puts the call in computed mode (`"mode": "analytics"`).
+There, **`page` is ignored**. Measured on the same 2,379-row dataset:
+
+| Call | Result |
+|---|---|
+| `select_columns:["SKU Code"]`, `page_size:3`, `page:1` | Item23, Item60, Item60 · `has_more: true`, `next_page: 2` |
+| `select_columns:["SKU Code"]`, `page_size:3`, **`page:500`** | **the identical three rows** · `has_more: true`, `next_page: 501` |
+| `select_columns:[...]`, `page_size:1000`, `page:3` | 1,000 rows — not the 379 that page 3 of 2,379 should hold |
+
+`has_more` and `next_page` are still populated and still increment, so a loop that
+follows `next_page` re-reads the first page forever. Accumulating those pages
+counts the same rows two or three times and produces a plausible, wrong total.
+`total_rows` is `null` in computed mode, so nothing bounds the loop either.
+
+A **plain read** — no computed arguments at all (`"mode": "rows"`) — does paginate
+correctly: page 1 returned Item23/Item60 and page 900 returned Item105/Item158 on
+the same dataset. But a plain read returns **every** column, which is the wide read
+the skills forbid.
+
+**So, to cover a dataset larger than `page_size`:**
+
+```
+1. Prefer not to read rows at all. group_by the grain and use sum/avg/count —
+   the engine returns one row per group and no pagination is involved.
+
+2. If you must have row-level values, PARTITION with filters so each slice
+   comes back under page_size:
+      filters=[{"column":"Category","operator":"=","value":"Food"}]
+   Run one call per slice, and verify each slice's `returned < page_size`.
+   If a slice hits page_size it was truncated — split it further.
+
+3. Never iterate `next_page` on a computed read. Never treat `has_more: true`
+   from a computed read as evidence that more rows exist.
+
+4. Say how many rows you actually covered, and of how many. If you cannot
+   cover them all, say the figure is partial — never present a partial read
+   as a portfolio number.
+```
+
 **Rule 4 — sort by an aggregation's alias** to rank groups. Sorting by a raw
 column that isn't in the result shape will fail.
 

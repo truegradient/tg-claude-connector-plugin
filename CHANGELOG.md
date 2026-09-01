@@ -150,6 +150,55 @@ reading the docs would have caught.
   the lock extended 12 months past the last actual — so the measurable window is
   the intersection, 10 months of 24.
 
+### Fixed on a fourth pass — pagination, and a defect this plugin introduced
+
+- **`page` is ignored in computed mode, and `has_more` lies there.** Any of
+  `filters`, `group_by`, `aggregations`, `sort_by`, `select_columns`, `limit` or
+  `distinct` puts the call in `"mode": "analytics"`, where `page` has no effect.
+  Measured on the same 2,379-row dataset: `select_columns:["SKU Code"]` with
+  `page_size:3` returned the **identical three rows** at `page: 1` and at
+  `page: 500`, both reporting `has_more: true` with an incrementing `next_page`;
+  and `page_size:1000, page:3` returned 1,000 rows rather than the 379 that page 3
+  of 2,379 holds. `total_rows` is `null` there, so nothing bounds a loop.
+
+  This matters because **the previous commit told the risk skill to "use
+  `has_more` / `next_page` and read to the end" on the stored path — which uses
+  `select_columns`.** Following that would re-read the first page forever and, if
+  the pages were accumulated, count the same rows two or three times into a
+  volume-weighted figure. Plausible, wrong, no error. That guidance was introduced
+  here and is now removed.
+
+  A **plain read** (no computed arguments, `"mode": "rows"`) does paginate
+  correctly — page 1 returned Item23/Item60 and page 900 returned Item105/Item158
+  — but returns every column, which is the wide read the skills forbid.
+
+  `TOOL-GUIDE.md` gains rule 3b with the measured table. The risk skill now
+  prefers `group_by [<grain>, "trust_zone"]` with `count` / `sum(contribution)` /
+  `avg(accuracy)` — one row per group, no pagination, nothing to double count —
+  and falls back to partitioning with `filters` so each slice lands under
+  `page_size`, verifying `returned < page_size` per slice. Confirmed working: that
+  grouped call returned 12 rows with `has_more: false`, and surfaced that
+  `UNKNOWN` × `Critical` alone is 568 items and 19.95% of portfolio volume.
+
+  The skill also now states the tension it cannot escape: `avg` on a stored
+  percentage misweights (rule 5c) and a full row read is unavailable, so a
+  group-level stored accuracy is either volume-weighted from per-group `avg` and
+  `sum(contribution)` — an approximation, labelled as one — or computed from `sum`
+  aggregations and labelled derived. The three routes gave 1.47%, 13.87% and
+  26.38% on the same data, so naming which was used is not optional.
+
+### Added
+
+- `.claude-plugin/marketplace.json`, so the repo is installable with
+  `/plugin marketplace add truegradient/tg-claude-connector-plugin` followed by
+  `/plugin install truegradient-forecast-plugin@truegradient`. `plugin.json` alone
+  is not enough for a git-installable repo. Independently validated here:
+  `claude plugin validate .` passes, and the marketplace entry's plugin name
+  matches `plugin.json`. Two consequences worth knowing: the repo is **private**,
+  so every installer needs access to the `truegradient` org, and `plugin.json`'s
+  `version` is what drives update detection — it must be bumped on every release
+  or existing installs are never offered the new build.
+
 ### Fixed on a third pass — the last untested surfaces
 
 Testing `Final DA Data Value`, the full `Variable` vocabulary, `SnOP Comments` and
