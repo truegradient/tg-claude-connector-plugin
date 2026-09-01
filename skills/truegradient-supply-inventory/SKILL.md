@@ -42,7 +42,11 @@ These apply even if you cannot load the reference files:
 
 1. Call `tg_whoami` first. If not authenticated, stop — produce no numbers.
 2. Use `tg_list_experiments_for_analysis(module="inventory-optimization")`, and
-   never a column name that did not come from `tg_resolve_datasets`.
+   never a column name that did not come from `tg_resolve_datasets`. If that
+   returns `count: 0`, retry **unfiltered** before reporting no data — the module
+   label is the experiment's own and does not always match where the data sits.
+   Read `diagnostics.distinct_modules_seen` to see what the workspace actually
+   has.
 3. **`Supply Plan` is long, not wide.** Every read must filter `Variable`.
    Its month columns are **bare dates** (`2026-09-30`), not `<date> <Family>`.
 4. **Never total across `Variable` values** — nine are units, three are days.
@@ -54,7 +58,13 @@ These apply even if you cannot load the reference files:
    separated by that entity's lead time. `Total Inbounds` excludes both; it is
    committed supply only.
 7. **Prefer the post-transfer variants** (`updated_*`, `Final_*`) for anything
-   actionable, and name the column used.
+   actionable, and name the column used — **but detect them first.** Measured
+   live, neither experiment had a single `updated_*` or `Final_*` column and
+   `Stock Transfer` was empty in both; asking for them fails with a binder error.
+   When they are absent, use the base columns (`Potential_Sales_Loss`,
+   `Excess_Stock`, `TG Reorder now`), name them, and say no post-transfer variant
+   exists here. Never call a base figure post-transfer, and never say transfers
+   absorbed nothing — an absent column means unmodelled, not zero.
 8. **Never derive a risk band.** `Stock_Risk_Level` is stored workspace data —
    quote it with attribution, never compute one, and never assert a generic
    threshold as this workspace's setting.
@@ -129,12 +139,16 @@ Current-state triage:
   "aggregations": [
     {"function": "count", "alias": "skus"},
     {"function": "sum", "column": "soh_value", "alias": "soh_val"},
-    {"function": "sum", "column": "Final_Potential_Sales_Loss", "alias": "loss_units"},
+    {"function": "sum", "column": "Potential_Sales_Loss", "alias": "loss_units"},
     {"function": "sum", "column": "Potential_Sales_Loss_value", "alias": "loss_val"},
-    {"function": "sum", "column": "updated_Excess_Stock", "alias": "excess_units"},
+    {"function": "sum", "column": "Excess_Stock", "alias": "excess_units"},
     {"function": "sum", "column": "Excess_Stock_value", "alias": "excess_val"}],
   "page_size": 50 }
 ```
+
+Swap `Potential_Sales_Loss` → `Final_Potential_Sales_Loss` and `Excess_Stock` →
+`updated_Excess_Stock` **only if those columns are in the live list** (rule 7).
+The base names above are what both observed workspaces actually had.
 
 **7. Rank by money, not by count.** For triage, sort by
 `Potential_Sales_Loss_value` (at-risk) or `Excess_Stock_value` (excess), not by
@@ -248,6 +262,24 @@ those is a field in this data.
 **"Am I over-invested?"** Report `soh_value`, `Excess_Stock_value`,
 `Dead_Stock_value` and the stored `ExcessStock` count. Do not label a level
 "too high" against a threshold you invented.
+
+## When a dataset resolves but is empty
+
+`tg_resolve_datasets` can return `resolved: true` with an empty `columns` list and
+no sample row. That dataset holds no data. Measured live: `Stock Transfer`
+resolved this way in **both** experiments, and probing it returned
+`502 download_failed — "CSV file contains only whitespace"`.
+
+- Do not probe or read it. Say the dataset exists in this experiment but is empty.
+- **Never turn that into a business statement.** "No stock transfers are planned"
+  is a claim about the plan; an empty file is a claim about the file. Reporting
+  zero transfers, or a zero transfer value, from a dataset that was never
+  produced is a fabricated finding of exactly the kind this plugin exists to
+  prevent.
+- If a transfer question depends on it, say the transfer dataset carries no rows
+  in this experiment and that the question cannot be answered from it.
+- If an error body reaches you, report the failure in words. Do not repeat the
+  storage path, bucket or company id it contains — failures leak all three.
 
 ## Working with the other skills
 

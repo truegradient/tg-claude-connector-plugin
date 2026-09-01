@@ -247,10 +247,33 @@ moving existing stock instead of buying more.
 | `TG Reorder now` | `updated_TG_Reorder_now` | **after** |
 | `Excess_Stock` | `updated_Excess_Stock` | **after** |
 
-**Default to the post-transfer variant** for anything actionable — it is the
-number after the plan has done what it can for free — and **name the column you
-used**. Use the pre-transfer variant only to quantify what transfers are worth,
-and label it as such.
+**Default to the post-transfer variant WHEN IT EXISTS** — it is the number after
+the plan has done what it can for free — and **name the column you used**. Use the
+pre-transfer variant only to quantify what transfers are worth, and label it as
+such.
+
+**Detect first: in many workspaces these variants are absent.** Measured live
+across two experiments, `DOI Details` (69 and 66 columns) carried **no**
+`updated_*` or `Final_*` column at all, and `Stock Transfer` was empty in both —
+a coherent picture, since with no transfer model run there is nothing to produce a
+post-transfer number. Asking for `Final_Potential_Sales_Loss` or
+`updated_Excess_Stock` there fails with a DuckDB binder error.
+
+```
+if the updated_/Final_ variant is in the live column list  -> use it, name it
+else                                                       -> use the base column
+                                                              (Potential_Sales_Loss,
+                                                               Excess_Stock,
+                                                               TG Reorder now),
+                                                              name it, and say no
+                                                              post-transfer
+                                                              variant exists in
+                                                              this experiment
+```
+
+Do not describe a base-column figure as post-transfer, and do not claim transfers
+absorbed nothing — absent columns mean the question was not modelled, which is
+different from a modelled zero.
 
 The difference is material, not cosmetic. In one observed workspace, transfers
 absorbed about 2% of unit sales loss, cut recommended reorder by about 3%, and cut

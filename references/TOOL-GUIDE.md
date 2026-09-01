@@ -128,6 +128,20 @@ rather than making separate ones.
 
 - `resolved: false` with a `reason` → that dataset name has no mapping in this
   module. Pick another.
+- **`resolved: true` with an empty `columns` list and a null `sample_row` → the
+  dataset is EMPTY, not readable.** Measured live: `Stock Transfer` resolved
+  successfully with 0 columns in both experiments, and `tg_dataset_info` on it
+  returned `502 download_failed — "CSV file contains only whitespace"`. Treat
+  0 columns as unavailable: do not call `tg_dataset_info` or `tg_fetch_dataset`
+  on it, and say the dataset exists but holds no data. Never report that as
+  "no stock transfers" — an empty file is not a business fact, and reporting zero
+  transfers when the file simply was not produced is a fabricated finding.
+- **Error bodies leak the storage path — never repeat one to the user.** That 502
+  came back containing
+  `accounts/demo_<company-id>/data_bucket/inventory-optimization/.../stock_transfer_df.csv`.
+  The tool contract is that paths are never exposed, but failures breach it.
+  Report the failure in plain words and drop the path, the bucket and the
+  company id.
 - `schema_error` on a dataset → the column probe failed. The dataset is still
   selectable, but you have **no column list**. Report that; do not guess columns.
 - An entry in `errors[]` → that experiment id is not among your company's usable

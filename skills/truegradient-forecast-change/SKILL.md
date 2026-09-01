@@ -80,8 +80,9 @@ month, say so and offer a month where they do.
 
 **Lock families:** the reference side is the global lock (`Locked ...`).
 `Lock ...` is a *separate* secondary per-lag family, not a spelling of `Locked`.
-All lock families share the ` Lag_N` suffix, so anchor on the leading word plus a
-space — `contains "Lock"` matches both. A secondary lock's values may be shown for
+Lock families usually carry a ` Lag_N` suffix — a bare `Locked ML Forecast` with
+no lag token is also a live form (`LOCK-FAMILIES.md` §8) — so anchor on the
+leading word plus a space — `contains "Lock"` matches both. A secondary lock's values may be shown for
 comparison, labelled as not the calculation basis; any computed metric stays on the
 global lock. Never compare two different lags and call the difference a forecast
 change — that is a horizon effect. See `../../references/LOCK-FAMILIES.md`.

@@ -77,7 +77,8 @@ If the user asks for the **locked or frozen** forecast, that is a lock family:
 default to the global lock, `<date> Locked ML Forecast Lag_N`, and state the lag.
 `Lock ...` (secondary, per-lag) and `Multi_Lock ...` (rest-of-year) are separate
 families — read them only when named, and label them as not the basis for any
-metric. All three share the ` Lag_N` suffix, so the leading word is the only
+metric. They usually share a ` Lag_N` suffix — a bare `Locked ML Forecast` with no
+lag token is also a live form — so the leading word is the only reliable
 discriminator: `contains "Lock"` matches `Locked` too. See
 `../../references/LOCK-FAMILIES.md`. If `Forecast` has no column for the requested month, say
 which families do cover it and use the closest match the user would want —

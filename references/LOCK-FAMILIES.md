@@ -57,7 +57,10 @@ metric — uses the **global lock** and nothing else.
    substitute for the missing lock, and it is never called the workspace's
    accuracy.
 6. **Always name the family and the lag** in the answer and the provenance footer:
-   "78% against the global lock at Lag_4", never "78%".
+   "78% against the global lock at Lag_4", never "78%". Where the column carries no
+   lag token, name the family and say the lag is unstated — "78% against the
+   global lock (`Locked ML Forecast`, lag not recorded in the column name)". Both
+   forms are live; see §8. A missing lag token never blocks an answer.
 
 > If several `Locked ...` lags exist, do not pick silently: report which lags are
 > available, use the one with the widest paired coverage, say which you used and
@@ -196,8 +199,12 @@ Expect ragged coverage: the global lock routinely covers far fewer months than
 
 ## 8. Migration note
 
-Workspaces created before this schema change may still carry a bare
-`Locked ML Forecast` with no lag suffix. Both forms may coexist.
+**Both forms are in live use — this is not a legacy edge case.** Measured across
+two experiments in one workspace: a CPG experiment carried
+`Locked ML Forecast Lag_1` (22 months) with `Locked ML Forecast Lag_1 Abs Error`,
+while a Retail experiment in the same company carried a bare
+`Locked ML Forecast` (12 months) with `Locked ML Forecast Abs Error` and no lag
+token in any column. Accuracy computes correctly against both.
 
 - A bare `Locked ML Forecast` is the global lock with an **unstated** lag. Use it,
   and say the lag is not recorded in the column name.

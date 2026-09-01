@@ -20,8 +20,8 @@ These apply even if you cannot load the reference files:
    Never compute a metric on a secondary `Lock ...` or `Multi_Lock ...` family,
    even if the user names one; you may read and show its values, labelled as not
    the calculation basis.
-   All lock families share the ` Lag_N` suffix, so the leading word is the only
-   discriminator: anchor on the trailing space (`"Locked "` vs `"Lock "`), because
+   Lock families usually carry a ` Lag_N` suffix, so the leading word is the only
+   reliable discriminator: anchor on the trailing space (`"Locked "` vs `"Lock "`), because
    `contains "Lock"` matches both. See `../../references/LOCK-FAMILIES.md`.
 3. The actual side is **`<date> Sales`** unless the user explicitly asks for raw.
    The forecast side is the global lock — the one exception is an explicit
@@ -44,7 +44,10 @@ These apply even if you cannot load the reference files:
    error column from the **same family and lag**. A Lag_4 error against a Lag_2
    forecast fails silently.
    **Name the family and the lag in the answer.** An accuracy figure without them
-   is not an answer.
+   is not an answer. If the column carries no lag token — a bare
+   `Locked ML Forecast`, which is a real live form — name the family and say the
+   lag is unstated in the column name. Never refuse to answer for want of a lag
+   token, and never invent one.
 7. **Always report the exact month window used and every month excluded, with the
    reason.** An accuracy figure without its window is not an answer.
 8. **Never assign trust-zone labels** ("Critical", "Trusted", …). Thresholds are

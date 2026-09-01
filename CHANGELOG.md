@@ -150,6 +150,61 @@ reading the docs would have caught.
   the lock extended 12 months past the last actual — so the measurable window is
   the intersection, 10 months of 24.
 
+### Fixed on a second live pass — the untested surfaces
+
+The first pass only exercised one experiment. Testing the second one, plus the
+datasets skipped earlier, found seven more defects.
+
+- **The lag token is not always present, and demanding it silently disables the
+  plugin.** One experiment carried `Locked ML Forecast Lag_1`; the other, in the
+  same company, carried a bare `Locked ML Forecast` with `Locked ML Forecast Abs
+  Error` and no lag token in any column. `LOCK-FAMILIES.md` §8 already allowed
+  the bare form, but three skills asserted that *all* lock families share the
+  ` Lag_N` suffix and the accuracy skill made naming the lag a non-negotiable —
+  so a skill would have reported "no lock family exists, no accuracy can be
+  measured" against a perfectly good frozen baseline. Accuracy computes correctly
+  on the bare form; verified. The absolute claims are now conditional, and a
+  missing lag token is reported as "lag not recorded in the column name" rather
+  than blocking the answer.
+- **The grain vocabulary is per-experiment, and the two shared none.** CPG had
+  `SKU Code`, `Site ID`, `Site Name`, `Category`, `Sub-category`, `Brand name`,
+  `channel`. Retail had `Store Num`, `Product Type`, `Subtype`, `Brand`,
+  `Style Group Name`. `Lifestage` was the only descriptive column in common.
+  Every example in this plugin writes `group_by: ["Category"]`, which fails with a
+  binder error in Retail. `COLUMN-DISCOVERY.md` gains step 4b with the measured
+  comparison and the rule to read grain per experiment.
+- **Month windows are per-experiment too — these were a full year apart.** CPG
+  `Sales` ran 2024-08-31 → 2026-07-31 with `Forecast` from 2026-08-31; Retail ran
+  2023-08-31 → 2025-07-31 with `Forecast` from 2025-08-31. A date that resolves in
+  one is `COLUMN_NOT_FOUND` in the other. New step 4c. The binder error's
+  `Candidate bindings` list is named as the thing to read instead of guessing again.
+- **`Stock Transfer` resolves successfully and is empty.** `resolved: true`, 0
+  columns, null sample row in both experiments; `tg_dataset_info` on it returns
+  `502 download_failed — "CSV file contains only whitespace"`. Zero columns now
+  means unavailable: do not probe, do not read. Critically, the supply skill is
+  now told never to convert that into "no stock transfers are planned" — an empty
+  file is a fact about the file, not about the plan, and reporting a zero transfer
+  value from an unproduced dataset is a fabricated finding.
+- **Error bodies leak the storage path.** That 502 came back carrying
+  `accounts/demo_<company-id>/data_bucket/inventory-optimization/.../stock_transfer_df.csv`.
+  The tool contract promises paths are never exposed; failures breach it. Skills
+  must report the failure in words and drop the path, bucket and company id.
+- **The supply skill's own example used columns that do not exist.** Rule 7 said
+  to prefer the post-transfer variants and the `DOI Details` example requested
+  `Final_Potential_Sales_Loss` and `updated_Excess_Stock`. Neither experiment had
+  a single `updated_*` or `Final_*` column — coherent, since `Stock Transfer` was
+  empty in both, so nothing produced a post-transfer number. The example now uses
+  the base columns, verified working (Retail: StockOut 105 SKUs, $312.5K sales
+  loss), with the swap documented as conditional on the live column list.
+  `SUPPLY-DATA-CONTRACT.md` §8 now says to detect before defaulting, and not to
+  read an absent column as a modelled zero.
+- The supply skill's `module="inventory-optimization"` filter now falls back to an
+  unfiltered roster on `count: 0`, the mirror of the demand-planning fix.
+
+Every fix in this section was re-run against live data before commit. `Supply
+Plan`'s long shape, its `Variable` filter and its bare-date month columns all
+behaved exactly as `SUPPLY-DATA-CONTRACT.md` describes.
+
 ### Corrected on retest
 
 The fixes above were re-run against the live workspace. Two of them were wrong.

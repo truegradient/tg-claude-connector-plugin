@@ -74,6 +74,34 @@ If the user names an entity ("SKU ABC123"), match it against the grain columns
 that actually exist. If you cannot tell which column holds it, ask, or use a
 `contains` filter across the plausible identifier column and say what you did.
 
+### Step 4b — the grain vocabulary is per-experiment. Never assume it.
+
+**Two experiments in the same company shared no grain column at all.** Measured
+live:
+
+| CPG experiment | Retail experiment |
+|---|---|
+| `SKU Code`, `Site ID`, `Site Name` | `Store Num` |
+| `Category`, `Sub-category` | `Product Type`, `Subtype` |
+| `Brand name`, `Product Name`, `channel` | `Brand`, `Style Group Name` |
+
+Every example in this plugin writes `group_by: ["Category"]`. In the Retail
+experiment that column does not exist, and the call fails with a DuckDB binder
+error. Read the grain columns from the live list for **each** experiment before
+building any `group_by`, `filters` or `select_columns`, and name the grain you
+used in the answer. `Lifestage` was the only shared descriptive column.
+
+### Step 4c — month windows are per-experiment too
+
+The same two experiments were a **full year apart**: CPG `Sales` ran
+2024-08-31 → 2026-07-31 with `Forecast` from 2026-08-31; Retail `Sales` ran
+2023-08-31 → 2025-07-31 with `Forecast` from 2025-08-31. A date that resolves in
+one experiment is a `COLUMN_NOT_FOUND` in the other. Never carry a month list
+between experiments, and re-derive the eligible set per experiment.
+
+The binder error is actually helpful here — it lists `Candidate bindings`, which
+names real nearby columns. Read them instead of guessing again.
+
 ### Step 5 — detect optional columns before relying on them
 
 Check the live list for each of these. Presence changes your approach:
