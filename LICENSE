@@ -1,0 +1,9 @@
+Copyright (c) 2026 TrueGradient AI. All rights reserved.
+
+This software and its accompanying documentation are proprietary and
+confidential. No licence to use, copy, modify, merge, publish, distribute,
+sublicense or sell copies is granted except by written agreement with
+TrueGradient AI.
+
+The `license` field in .claude-plugin/plugin.json reads UNLICENSED, which
+matches this notice: the package is not published under an open-source licence.

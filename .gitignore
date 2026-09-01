@@ -1,0 +1,21 @@
+# Local, per-machine Claude Code state — never commit.
+# .claude/settings.local.json in this repo disables the truegradient MCP server,
+# which would silently break the connector for anyone who cloned it.
+.claude/settings.local.json
+.claude/settings.local.json.bak
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor
+*.swp
+*~
+.idea/
+.vscode/
+
+# Build artefacts — the packaged plugin is a release asset, not a tracked file
+dist/
+*.zip

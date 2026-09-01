@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "truegradient": {
+      "type": "http",
+      "url": "https://mcp-server.truegradient.ai/mcp"
+    }
+  }
+}
