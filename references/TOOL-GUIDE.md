@@ -118,11 +118,12 @@ stored accuracy. Call the roster unfiltered and route on the datasets an
 experiment actually resolves. A `count: 0` with a non-empty `raw_count` means the
 filter dropped everything — read `dropped_by` before reporting no data.
 
-The tool accepts multiple ids and resolves them in one backend fetch, but the
-skills work on **one experiment at a time**: prior-cycle experiments are usually
-absent from the live roster, so cross-cycle comparison is not supported. If you
-do need to survey several live experiments, pass their ids in a single call
-rather than making separate ones.
+The tool accepts multiple ids, but the skills work on **one experiment at a
+time**: prior-cycle experiments are usually absent from the live roster, so
+cross-cycle comparison is not supported. **Do not batch ids on wide experiments** —
+two IBP experiments in one call produced a 138,506-character response that could
+not be returned. Resolve one experiment per call, and scope it with `tables` to
+the datasets you actually need (see the overflow section below).
 
 **Failures:**
 
@@ -208,6 +209,59 @@ paginated read.
 
 **Aggregation functions that work:** `count` `sum` `avg` `min` `max`
 `count_distinct` `median` `percentile` `stddev` `variance` `string_agg`
+
+### An `alias` that collides with a response field silently returns nothing
+
+`alias: "rows"` zeroes the entire result set. No error, no message. Verified on the
+same call three ways:
+
+| aggregations | Result |
+|---|---|
+| `sum(...) as fc` + `count as n` | **6 rows, correct** |
+| `sum(...) as fc` + `count(column:"SKU Code") as n_sku` | **6 rows, correct** |
+| `sum(...) as fc` + `count as **rows**` | `returned: 0, columns: [], rows: []` |
+
+`count` itself is fine — with or without a `column`. The alias is the problem: it
+collides with the response envelope's own `rows` key. Treat every envelope field
+name as reserved and never use one as an alias:
+
+```
+reserved:  rows  columns  page  page_size  returned  has_more  next_page
+           total_rows  mode  experiment_id  dataset_name
+```
+
+**Why this is dangerous rather than annoying:** the empty result is
+indistinguishable from "no rows matched your filter", which
+`COLUMN-DISCOVERY.md` §4d tells you to report as "this workspace records none".
+One poisoned alias in a batched call zeroes every other aggregation beside it, so
+a ten-aggregation batch returns nothing and the honest-looking conclusion is that
+the data is absent. Use short, unmistakable aliases (`n`, `a_2026_07`, `vol`) and
+if a computed read returns `returned: 0` with a filter you expect to match,
+**re-run it with one aggregation at a time before concluding the data is empty.**
+
+### `tg_resolve_datasets` can overflow the response limit — scope it
+
+On a wide IBP experiment the full response does not fit inline. Measured: one
+experiment returned **72,557 characters** and two together **138,506** — both
+rejected, because `Final DA Data` and `Final DA Data Value` are returned in full
+at 419 columns each with sample rows, whether or not you need them.
+
+This matters because step 3 is mandatory and reads like a call whose output you
+inspect directly. A reader who treats the overflow as a failure stops with no
+column vocabulary at all.
+
+```
+1. Scope the call with `tables` to just what you need:
+      tg_resolve_datasets(experiment_id="<id>",
+                          tables=["DOI Details", "Supply Plan"])
+2. One experiment per call. Do not batch ids on wide experiments.
+3. If it still overflows, tg_dataset_info(experiment_id, dataset_name) returns
+   the same authoritative column list inline, one dataset at a time. You lose
+   `doc_summary` and `sample_row` — and the sample row is worth having, because
+   it is what reveals a stored column's scale and convention.
+4. The overflowed payload is saved to a file the error names. Parsing that file
+   is legitimate and keeps the authoritative vocabulary.
+```
 
 ### `min` and `max` are lexicographic — do not use them on numbers
 

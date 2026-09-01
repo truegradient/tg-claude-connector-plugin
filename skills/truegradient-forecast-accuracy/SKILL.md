@@ -194,10 +194,32 @@ gap between the last `Sales` month and today: if actuals stop two months back,
 the answer's real limitation is data age, not the current-month rule. Report the
 experiment's `createdAt` next to it.
 
-**5. Check for precomputed columns first.**
-If `overall_accuracy` or `rolling_accuracy` exist in the live column list, prefer
-them — they already reflect this workspace's configuration. Read and aggregate
-them, and cite them as precomputed. Otherwise compute (step 6).
+**5. Read the precomputed columns — then still compute. Report both.**
+
+If `overall_accuracy` or `rolling_accuracy` exist, read them and cite them as
+precomputed: they reflect this workspace's own configuration and window. **But do
+not stop here, and do not use a bare average of them as the headline.** Steps 6–10
+still run. Three reasons, all measured:
+
+- **They are not the same statistic.** On one live dataset the portfolio figure was
+  `avg(overall_accuracy)` **1.47%**, volume-weighted **13.04–13.87%**, and computed
+  from sums **26.38%**. A bare `avg` published as portfolio accuracy is a
+  25-point error, because it weights a 3-unit SKU like a 30,000-unit one.
+- **Their window is not readable.** No tool exposes it, so a stored figure cannot
+  satisfy rule 6 ("name the family and the lag") or rule 7 ("report the exact month
+  window"). A computed figure can.
+- **Their scale is not always documented.** `overall_accuracy` and
+  `rolling_accuracy` had different ranges and a median of 0 on the same rows.
+
+So the deliverable is: **the computed figure as the headline, with its window,
+family and lag** — and the stored figures quoted beside it as the workspace's own
+numbers, labelled precomputed, with the note that their window is not readable and
+the two are not expected to match. If they disagree sharply, say so; that
+disagreement is information, not an error to hide.
+
+Only when the lock family is missing entirely — so nothing can be computed — does a
+stored figure stand alone, and then say plainly that it could not be verified
+against a window you can name.
 
 **6. Fetch the sums — one batched call.**
 
@@ -264,15 +286,26 @@ than a row-level calculation would.
 
 **8. Bias, when asked or when it explains the accuracy.**
 
+**Two scales — name the one you used.** The stored `<date> Bias` column is a signed
+percentage error, **unbiased at 0** (verified: `Sales` 41 vs locked 21 stored as
+`-48.78`). A bias you compute as a ratio is **unbiased at 100**. They differ by
+exactly 100.
+
 ```
-bias = (Σ Σbaseline_m / Σ Σactual_m) * 100
-  100 = unbiased,  >100 = over-forecasting,  <100 = under-forecasting
+signed % error = (Σ baseline − Σ actual) / Σ actual × 100      0   = unbiased
+ratio × 100    =  Σ baseline / Σ actual × 100                  100 = unbiased
+                                            signed = ratio − 100
 ```
 
+Prefer the signed form, because it matches the stored column and is directly
+comparable with it. Measured over the 10 eligible months: ratio 78.16, signed
+−21.84 — the baseline ran ~22% below actuals.
+
+Positive = over-forecasting, negative = under-forecasting (signed scale).
 Undefined if the actual total is 0 — say so, don't print zero.
+Never put a stored `<date> Bias` and a computed ratio in the same table.
 
-State it in words as well as the number: "bias 78 — the baseline forecast totalled
-about 22% below actuals, so it under-forecasts systematically."
+Full detail: `../../references/METRICS.md` §3.
 
 **9. Trend, when asked.**
 Compute accuracy per month rather than pooled, then describe the direction. Needs

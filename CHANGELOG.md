@@ -150,6 +150,94 @@ reading the docs would have caught.
   the lock extended 12 months past the last actual — so the measurable window is
   the intersection, 10 months of 24.
 
+### Fixed after installing the plugin and running an acceptance pass
+
+The plugin was installed for real (`claude plugin marketplace add` →
+`claude plugin install`, v1.0.0, enabled) and four independent readers with no
+prior context followed the installed skills against the live connector. Most fixes
+held — CPG accuracy came back 26.38%, Retail 57.70% on the bare unlagged lock,
+`avg` was used for days of cover, the empty `Stock Transfer` was refused with "that
+is a fact about the file, not about your plan", and the 101-against-42–78 interval
+was caught and explained. Nine defects surfaced anyway, including the worst of the
+whole effort.
+
+- **The bias convention was wrong, by exactly 100. This one was introduced here.**
+  `METRICS.md` §3 defined bias as `ΣF/ΣA × 100`, unbiased at 100, and the risk
+  skill's `bias_gap = |bias − 100|` was built on it. The **stored `<date> Bias`
+  column is 0-centred** — a signed percentage error. Verified to 14 decimal places
+  on two independent rows: `Sales` 41 with locked 21 stores `-48.78048780487805`
+  = `(21−41)/41 × 100`; another row, `Sales` 41 with locked 17, stores `−58.537`.
+  On the ratio scale that same row computes to 51.22 — which is the value of the
+  stored **`Accuracy`** column, not `Bias`. So `|bias − 100|` returned **148.78**
+  where the answer is **48.78**, pushing `systematic` to 3.05 — above 1, which is
+  impossible and should itself have been the tell. A reader following the skill
+  would have labelled a plainly under-forecast group as wildly over-forecast.
+  §3 is rewritten as 3a (stored, 0-centred), 3b (computed, either scale, with
+  `signed = ratio − 100`), 3c (rules); `bias_gap` now takes an explicit `origin`,
+  and a `systematic` above 1 is defined as a stop-and-recheck signal. The risk
+  skill's worked example is restated on the signed scale.
+- **Step 7's PREFERRED recipe contradicted rule 5c**, and the skill admitted the
+  tension without resolving it. Step 7 said to use `avg("overall_accuracy")` while
+  rule 5c forbids averaging a stored percentage. Resolved: the `avg` is legitimate
+  *only* inside one grain × zone cell, and cells are then volume-weighted up with
+  the result labelled an approximation. Publishing a bare `avg` is called out as
+  the 25-point error it is (1.47% vs 13.04% vs 26.38% on the same data).
+- **Step 4 and step 9a could not both be followed.** Step 4 says break placeholder
+  grain values out and never rank them as a category; step 9a says rank all groups
+  by `risk_volume` descending — and `UNKNOWN` was the **largest** group, 20.07 of
+  53.13 total risk points. Ranking it first tells a planner to fix a category that
+  does not exist; omitting it hides a fifth of the portfolio. Placeholder groups
+  now go in a labelled block **above** the ranked table, which is numbered from 1
+  with real groups only.
+- **Step 5 short-circuited the whole skill.** "If `overall_accuracy` or
+  `rolling_accuracy` exist, prefer them… Otherwise compute (step 6)" meant that in
+  a workspace where they exist — both observed ones — the procedure never reached
+  steps 6–10, which everything downstream assumes. And a stored figure cannot
+  satisfy rule 6 (name the family and lag) or rule 7 (report the window), because
+  the stored window is not readable. Now: compute the headline, quote the stored
+  values beside it as the workspace's own, and say when they disagree.
+- **An `alias` colliding with a response field silently returns nothing.**
+  `alias: "rows"` made a valid grouped call return
+  `returned: 0, columns: [], rows: []` with no error, while the identical call with
+  `alias: "n"` returned 6 correct rows. `count` is fine either way — the alias is
+  the problem, colliding with the response envelope's `rows` key. One poisoned
+  alias zeroes every other aggregation batched beside it, and the empty result is
+  indistinguishable from "no rows matched", which §4d says to report as "records
+  none". The envelope field names are now listed as reserved, with the instruction
+  to re-run one aggregation at a time before concluding data is absent.
+- **`tg_resolve_datasets` overflows the response limit on wide experiments** — hit
+  by three of the four readers. 72,557 characters for one experiment, 138,506 for
+  two, because both 419-column forecast datasets come back in full with sample
+  rows whether needed or not. Step 3 is mandatory and reads like a call you inspect
+  directly, so a reader can stop there with no column vocabulary. Now: scope with
+  `tables`, one experiment per call, fall back to `tg_dataset_info` for an inline
+  column list, and parse the saved payload if it still overflows. The earlier
+  advice to batch ids is retracted.
+- **The supply skill's examples named columns that exist nowhere.**
+  `sku_standard`, `Channel` and `Type` in the filter and `group_by` examples;
+  `selling_price` and `AVG COGS` in the Metrics table. Live names are `SKU Code`,
+  `Site ID`, `channel` (lowercase, and `Supply Plan` has **no** channel column),
+  `Selling Price`, `Cost`, `COGS`. Fixed, and the contract's identity-column list
+  is now marked as one workspace's sample rather than a schema.
+- **The documented join key was unfollowable.** §11 specified
+  `sku_standard + Channel` and "join at sku × channel", but `Supply Plan` has no
+  channel column in either observed workspace. Replaced with: derive the key from
+  the intersection of the two datasets' live entity columns, name it, and refuse
+  the join if the intersection is empty. The observed usable key was
+  `SKU Code` + `Site ID`.
+- **The Metrics table still defaulted to the absent post-transfer variants** even
+  after rule 7 was fixed, as did the output-shape footer. Base columns are now the
+  default with the variants conditional. Rule 4's unit counts likewise deferred to
+  the live `Variable` probe (twelve documented, eleven observed).
+- **Zero versus missing was genuinely contradictory** — rule 9 said a real 0 is
+  meaningful, §4d said report a zero-summing column as "records none". Resolved
+  into three cases: absent measure → unmodelled, say so; present and 0 → a real
+  modelled zero, report it (`In Transit` and `Total Inbounds` were both);
+  present, 0 everywhere, and derived → placeholder, name it
+  (`current_month_sales_tilldate`). State which you concluded.
+- The supply skill's module filter and `TOOL-GUIDE.md`'s "do not filter by module"
+  no longer read as contradicting each other.
+
 ### Fixed on a fourth pass — pagination, and a defect this plugin introduced
 
 - **`page` is ignored in computed mode, and `has_more` lies there.** Any of

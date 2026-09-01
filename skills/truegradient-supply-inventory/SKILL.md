@@ -46,17 +46,25 @@ These apply even if you cannot load the reference files:
    returns `count: 0`, retry **unfiltered** before reporting no data — the module
    label is the experiment's own and does not always match where the data sits.
    Read `diagnostics.distinct_modules_seen` to see what the workspace actually
-   has.
+   has. (`TOOL-GUIDE.md` says not to filter by module for *forecast* questions,
+   because forecast data lives in inventory-optimization experiments too. For
+   supply questions the filter is the right starting point — it returned both
+   experiments in the observed workspace — but it is a starting point, not a
+   gate.)
 3. **`Supply Plan` is long, not wide.** Every read must filter `Variable`.
    Its month columns are **bare dates** (`2026-09-30`), not `<date> <Family>`.
-4. **Never total across `Variable` values** — eight are units, three are days, and
-   `Forecast Per Day` is a rate. And **never sum a days or rate measure across
+4. **Never total across `Variable` values.** Of the twelve documented measures,
+   eight are units, three are days and `Forecast Per Day` is a rate — but both
+   observed workspaces had only **eleven** (`Open Purchase Orders` absent), i.e.
+   seven units. Read the live set with the `group_by: ["Variable"]` probe in step 5
+   and classify from that, never from a count in this file. And **never sum a days or rate measure across
    entities** either: summing `Days On Inventory` over 2,379 SKUs returned 387,054,
    which is arithmetically fine and meaningless. Use `avg` or report per entity.
 5. **Never assert the inventory balance identity as arithmetic**, and never infer
    unmet demand by subtracting forecast from supply. `End Inventory` is floored
    at zero per entity, so shortfalls are discarded. Read loss from
-   `Final_Potential_Sales_Loss` / OOS fields instead.
+   `Potential_Sales_Loss` (or `Final_Potential_Sales_Loss` where present) /
+   OOS fields instead.
 6. **Never add `Reorder Plan` and `Reorder Received`** — same order, two moments,
    separated by that entity's lead time. `Total Inbounds` excludes both; it is
    committed supply only.
@@ -74,6 +82,22 @@ These apply even if you cannot load the reference files:
 9. Missing means unknown. **Never report a missing value as zero** — and note
    that in supply data a genuine `0` is meaningful (no stock, no inbound), so
    distinguishing the two matters more here than anywhere else.
+   **How to tell them apart, and how this squares with
+   `COLUMN-DISCOVERY.md` §4d:** §4d says a column summing to zero should be
+   reported as "this workspace records none" rather than published as a zero.
+   That rule is about a column that is a *placeholder*. In supply data the test is
+   whether the measure was modelled at all:
+   - the measure is **absent** from the live `Variable` set or column list
+     → unmodelled. Say so; do not print a zero. (`Open Purchase Orders` was
+     absent in both observed workspaces.)
+   - the measure is **present** and reads 0 → that is a real modelled zero and you
+     report it as one, because "no inbound supply this month" is a finding.
+     (`In Transit` and `Total Inbounds` were present and 0 across every entity and
+     month — genuinely no committed inbound.)
+   - present, reads 0, and it is a **derived/aggregate** column you suspect is a
+     placeholder → check whether it is 0 for *every* row in *every* period. If it
+     is, say the workspace does not populate it, and name the field.
+   State which of the three you concluded, and why.
 10. The first period column is the **current, partial** period. Say so.
 11. If the roster returns `used_archived_fallback: true`, lead with that caveat.
 12. Separate what the data says, what you calculated, and what you recommend.
@@ -87,7 +111,13 @@ permissions).
 
 **1–3. Identify, pick, discover.**
 `tg_whoami` → `tg_list_experiments_for_analysis(module="inventory-optimization")`
-→ `tg_resolve_datasets(experiment_ids=["<id>"])`.
+→ `tg_resolve_datasets(experiment_id="<id>", tables=["DOI Details", "Supply Plan"])`.
+
+**Scope the resolve call with `tables`.** Unscoped, it returns `Final DA Data` and
+`Final DA Data Value` in full at 419 columns each — 72,557 characters for a single
+experiment, which overflows the response limit and leaves you with no column
+vocabulary at all. You do not need the forecast datasets for a supply question.
+See `../../references/TOOL-GUIDE.md`.
 
 **4. Route to a dataset** using the table above. If the question needs both, say
 so and read both.
@@ -113,8 +143,8 @@ Time-phased, one entity:
 ```json
 { "experiment_id": "<id>", "dataset_name": "Supply Plan",
   "filters": [
-    {"column": "sku_standard", "operator": "=", "value": "<sku>"},
-    {"column": "Channel", "operator": "=", "value": "<channel>"},
+    {"column": "SKU Code", "operator": "=", "value": "<sku>"},
+    {"column": "Site ID", "operator": "=", "value": "<site>"},
     {"column": "Variable", "operator": "in",
      "values": ["Beginning Inventory", "Forecast", "Total Inbounds",
                 "Reorder Received", "End Inventory", "Days On Inventory"]}],
@@ -127,7 +157,7 @@ Time-phased, portfolio or segment — one `Variable` at a time:
 ```json
 { "experiment_id": "<id>", "dataset_name": "Supply Plan",
   "filters": [{"column": "Variable", "operator": "=", "value": "End Inventory"}],
-  "group_by": ["Type"],
+  "group_by": ["<a grain column from the live list>"],
   "aggregations": [
     {"function": "sum", "column": "2026-09-30", "alias": "m09"},
     {"function": "sum", "column": "2026-10-31", "alias": "m10"}],
@@ -172,10 +202,15 @@ reflect the workspace's configuration. Cite them as stored.
 | days of cover, now | `Days on Inventory`, `DOI_Current_Stock` | divide SOH by a rate yourself |
 | days of cover, over time | `Days On Inventory` / `...With Pending` (Supply Plan) | recompute |
 | stockout timing | `Current_OOS_Date`, `OOS_Episode_Details`, `Total_Projected_OOS_Days` | project from daily rates |
-| what to order now | `updated_TG_Reorder_now` | use `TG Reorder now` without saying it is pre-transfer |
-| loss exposure | `Final_Potential_Sales_Loss`, `Potential_Sales_Loss_value` | subtract forecast from supply |
-| excess | `updated_Excess_Stock`, `Excess_Stock_value` | apply a days-of-supply multiple |
-| working capital | `soh_value` | multiply units by `selling_price` (use `COGS`-based `soh_value`) |
+| what to order now | `TG Reorder now` — or `updated_TG_Reorder_now` **if present** | report a pre-transfer figure as post-transfer |
+| loss exposure | `Potential_Sales_Loss`, `Potential_Sales_Loss_value` — or `Final_Potential_Sales_Loss` **if present** | subtract forecast from supply |
+| excess | `Excess_Stock`, `Excess_Stock_value` — or `updated_Excess_Stock` **if present** | apply a days-of-supply multiple |
+| working capital | `soh_value` | derive it from units × price yourself |
+| unit economics | `Selling Price`, `Cost`, `COGS`, `Margin%` | use `selling_price` or `AVG COGS` — **those names do not exist** |
+
+The base names in the left column are the ones verified present. The `updated_*` /
+`Final_*` variants were **absent from both observed experiments** (rule 7), so they
+are conditional, not the default.
 | risk band | `Stock_Risk_Level` (quote, attribute) | derive one |
 
 Two derived figures are legitimate, if labelled as calculated:
@@ -214,7 +249,8 @@ What the data says — current position (DOI Details, as of the run date)
   Stable                             20      $400,000               —
 
 What was calculated
-  Recommended buy = Σ updated_TG_Reorder_now (post-transfer) = 4,500 units.
+  Recommended buy = Σ TG Reorder now = 4,500 units (pre-transfer; no
+  post-transfer variant exists in this experiment).
   Pre-transfer was 4,700; transfers absorb the 200-unit difference.
   Loss exposure = Σ Potential_Sales_Loss_value.
   Excess share of capital = Σ Excess_Stock_value / Σ soh_value = 35%.
@@ -233,7 +269,7 @@ Source
   Dataset(s):  Supply Plan (units, monthly); DOI Details (snapshot)
   Variables:   Beginning Inventory, Forecast, Total Inbounds,
                Reorder Received, End Inventory
-  Fields:      updated_TG_Reorder_now, Final_Potential_Sales_Loss,
+  Fields:      TG Reorder now, Potential_Sales_Loss,
                Excess_Stock_value, soh_value, Stock_Risk_Level (stored)
   Period(s):   2026-09-30 .. 2026-11-30 (current partial month excluded)
   Caveats:     balance not reconciled — End Inventory floored at 0 per SKU
@@ -252,7 +288,8 @@ fabricate a reconciliation.
 verbatim, plus `Total_Projected_OOS_Days`. If the user wants the shape of the
 decline, add the `End Inventory` series. Never compute a date yourself.
 
-**"Should I reorder?"** Give `updated_TG_Reorder_now`, its `TG Reorder Date`, the
+**"Should I reorder?"** Give `TG Reorder now` (or `updated_TG_Reorder_now` where it
+exists), its `TG Reorder Date`, the
 entity's `lead_time`, and when `Reorder Received` shows the stock landing. The
 gap between order and arrival is the whole decision.
 

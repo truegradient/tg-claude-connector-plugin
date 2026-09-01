@@ -137,6 +137,13 @@ From the live column list, record which of these are present:
 |---|---|---|
 | `rolling_accuracy` | accuracy over the workspace's recent window | fall through to `overall_accuracy` |
 | `overall_accuracy` | accuracy over all eligible months | compute per `METRICS.md` §2 |
+
+**Stored accuracy does not replace the computed figure — it accompanies it.** The
+stored columns' window is not readable and their scale is not documented; measured
+on one dataset, `avg` gave 1.47%, volume-weighted 13.04%, and sum-based 26.38%.
+Report the computed figure with its window, family and lag, and quote the stored
+values beside it as the workspace's own. Never publish a bare `avg` of them.
+
 | `<date> Accuracy` | accuracy per month — use for trend, not for one headline | derive from monthly sums |
 | `<date> Bias` | direction of the error per month | compute per `METRICS.md` §3 |
 | `% Contribution Last 3 Months` | volume share, fixed 3-month window | compute per `METRICS.md` §4 |
@@ -212,6 +219,18 @@ PREFERRED — no row read at all:
   One row per group, no pagination, nothing to double count. This gives the
   zone distribution and the volume in each zone directly — which is what the
   ranking in 9a needs.
+
+  The avg() here is NOT the rule-5c violation it looks like, but only because
+  of the grain: it runs inside one <grain> x one zone cell, not across a whole
+  category. To reach a category-level accuracy, volume-weight the cells:
+
+      accuracy(group) = SUM(cell_avg x cell_contribution)
+                        / SUM(cell_contribution)
+
+  Label that an approximation. NEVER publish a bare avg() as a group or
+  portfolio accuracy: measured live, avg(overall_accuracy) across rows is
+  1.47% where the cell-weighted roll-up is 13.04% and the sum-based
+  computation is 26.38%. Reporting the bare avg is a 25-point error.
 
 IF you genuinely need row-level values:
   partition with filters, one call per grain value, each slice under page_size:
@@ -308,6 +327,23 @@ risk_volume(group) = Σ contribution of items in the worst zones
 Rank groups by risk_volume descending.
 ```
 
+**Placeholder groups are reported ABOVE the ranking, not inside it.** This
+resolves the collision between the placeholder rule and "rank all groups
+descending": a placeholder value such as `UNKNOWN` is frequently the *largest*
+`risk_volume` in the dataset — measured live, `Category = UNKNOWN` was 20.07 of
+53.13 total risk points, bigger than any real category. Ranking it at position 1
+tells a planner to go fix a category that does not exist; omitting it hides a
+fifth of the portfolio. So:
+
+```
+1. Placeholder groups (UNKNOWN / NA / Unmapped / blank) go in their own block
+   ABOVE the ranked table, labelled unmapped master data, with their risk_volume
+   and their effect on the portfolio figure stated.
+2. The ranked table contains only real groups, numbered from 1.
+3. Say what fixing the mapping would recover — measured live, removing UNKNOWN
+   moved portfolio accuracy from 26.38% to 32.90%.
+```
+
 That ordering is derived, but every input is stored: it is the workspace's own
 classification weighted by the workspace's own volume column, with no threshold of
 ours. Say that is what it is — "ranked by the share of volume the dataset's
@@ -344,10 +380,23 @@ matched, report accuracy and bias as two separate numbers and omit the ratio —
 say why rather than printing a figure whose denominator does not belong to its
 numerator.
 
+**Use the right origin, or you are out by 100.** The stored `<date> Bias` column is
+a signed percentage error, **unbiased at 0** — verified live: `Sales` 41 against a
+locked forecast of 21 stored as `-48.78048780487805`, i.e. `(F−A)/A × 100`. A bias
+you compute as `ΣF/ΣA × 100` is a ratio, **unbiased at 100**. `|bias − 100|`
+applied to the stored column gives **148.78** where the answer is **48.78**, which
+also pushes `systematic` above 1 — an impossible value that should be your signal
+the origin is wrong. See `../../references/METRICS.md` §3.
+
 ```
-bias_gap(i)   = |bias(i) − 100|                 # points away from unbiased
+origin = 0    if bias came from a stored <date> Bias column, or is a signed % error
+         100  if you computed it as Σforecast / Σactual × 100
+
+bias_gap(i)   = |bias(i) − origin|              # points away from unbiased
 systematic(i) = bias_gap(i) / shortfall(i)      # same window on both sides
                                                 # undefined if shortfall = 0
+                                                # > 1 means the origin is wrong —
+                                                #   stop and re-check, do not report
 
 systematic ≥ 0.6  → consistently high or low. A level correction recovers most of
                     the error. Name the direction: bias > 100 over-forecasting,
@@ -394,26 +443,29 @@ Where the dataset's own trust_zone puts each category's volume
   Ranked by the share of volume trust_zone places in Critical or Low Trust.
   Zones are the dataset's; the categories are not themselves classified.
 
-  Group        Critical   Low Trust   Review   Trusted   Accuracy   Bias
-  Snacks         24.1%        5.9%      1.2%      0.0%     18.4%    168.0
-  Beverages       2.0%       18.4%      3.6%      0.0%     29.1%    103.2
-  Dairy           0.0%        4.1%     12.9%      1.3%     51.7%     68.0
-  Bakery          0.0%        0.0%      2.2%      6.9%     62.9%     97.1
-  Frozen          0.0%        0.0%      0.9%      7.5%     71.2%     99.0
-  Ambient         0.0%        0.0%      0.0%      6.2%     80.1%    101.5
-  Ready Meals     2.4%        0.4%      0.0%      0.0%     22.0%    160.0
+  Group        Critical   Low Trust   Review   Trusted   Accuracy   Bias*
+  Snacks         24.1%        5.9%      1.2%      0.0%     18.4%    +68.0
+  Beverages       2.0%       18.4%      3.6%      0.0%     29.1%     +3.2
+  Dairy           0.0%        4.1%     12.9%      1.3%     51.7%    −32.0
+  Bakery          0.0%        0.0%      2.2%      6.9%     62.9%     −2.9
+  Frozen          0.0%        0.0%      0.9%      7.5%     71.2%     −1.0
+  Ambient         0.0%        0.0%      0.0%      6.2%     80.1%     +1.5
+  Ready Meals     2.4%        0.4%      0.0%      0.0%     22.0%    +60.0
+
+  * Bias is the stored <date> Bias scale: signed percentage error, 0 = unbiased,
+    positive = over-forecast, negative = under-forecast. Not the ratio scale.
 
   Percentages are each group's share of total portfolio volume, so the table
   sums to 100% across all cells.
 
-  Error character, from |bias-100| / (100-accuracy):
-    Snacks       68.0/81.6 = 0.83  systematic, over-forecast
-    Ready Meals  60.0/78.0 = 0.77  systematic, over-forecast
-    Dairy        32.0/48.3 = 0.66  systematic, under-forecast
-    Beverages     3.2/70.9 = 0.05  volatility
-    Bakery        2.9/37.1 = 0.08  volatility
-    Frozen        1.0/28.8 = 0.03  volatility
-    Ambient       1.5/19.9 = 0.08  volatility
+  Error character, from |bias − 0| / (100 − accuracy) — origin 0, stored scale:
+    Snacks       |+68.0|/81.6 = 0.83  systematic, over-forecast
+    Ready Meals  |+60.0|/78.0 = 0.77  systematic, over-forecast
+    Dairy        |−32.0|/48.3 = 0.66  systematic, under-forecast
+    Beverages     |+3.2|/70.9 = 0.05  volatility
+    Bakery        |−2.9|/37.1 = 0.08  volatility
+    Frozen        |−1.0|/28.8 = 0.03  volatility
+    Ambient       |+1.5|/19.9 = 0.08  volatility
   Both figures come from the same stored window; see step 9c.
 
   Worth flagging both ways: Ready Meals has 2.8% of volume but nearly all of
@@ -434,8 +486,9 @@ What this is built from
                 them are configured in TrueGradient and are not readable here.
   volume share  STORED — % Contribution Last 3 Months (fixed 3-month window)
   accuracy      STORED — rolling_accuracy, volume-weighted to category grain
-  bias          STORED — Bias over the same months as rolling_accuracy,
-                volume-weighted to category grain (windows matched, step 9c)
+  bias          STORED — <date> Bias over the same months as rolling_accuracy,
+                volume-weighted to category grain (windows matched, step 9c).
+                Signed scale, 0 = unbiased — NOT the ratio scale.
   character     DERIVED = |bias − 100| / (100 − accuracy); ≥0.6 systematic,
                 ≤0.3 volatility
   ranking      DERIVED ordering only — Σ volume in Critical + Low Trust per
@@ -446,9 +499,9 @@ What this is built from
 What to consider
   Snacks and Beverages hold 50.4% of volume and 50.4 of the 53.2 points that
   sit in Critical or Low Trust, so reviewing those two addresses most of it —
-  but they need different fixes. Snacks is 168 bias: consistently
+  but they need different fixes. Snacks is +68 bias: consistently
   over-forecast by two thirds, and a level correction addresses it. Beverages is
-  near-unbiased at 103 with a similar error scale, so its problem is
+  near-unbiased at +3.2 with a similar error scale, so its problem is
   volatility and a level shift will not help. Ready Meals is small but almost
   wholly Critical, which is a different question: whether it should be
   forecast this way at all.

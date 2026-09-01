@@ -68,7 +68,7 @@ One row is **one entity × one measure**. The measure is named in the `Variable`
 column. Every month in the horizon is a **bare-date column**.
 
 ```
-Row identity:   sku_standard + Channel + Variable
+Row identity:   <entity keys> + Variable      (read the keys from the live list)
 Time columns:   2026-08-31, 2026-09-30, ... 2028-01-31
 ```
 
@@ -210,10 +210,19 @@ State that distinction whenever both appear — one is real, one is a proposal.
 
 One row per entity, as of the experiment's run date. Column groups observed:
 
-**Identity and attributes**
+**Identity and attributes** — *names vary per workspace; this list is one
+workspace's, not a schema.* Read them from the live column list every time.
 `sku_standard`, `Channel`, `cluster`, `ts_id`, `Collection`, `Color`, `Type`,
 `Status`, `Seasonality`, `Weight_lbs`, `Lifestage`, `ABC_Class_FCS_Vol`,
 `ABC_Class_FCS_Val`, `XYZ`, `Fulfillment Node`
+
+> Two later workspaces shared **none** of the identity names above. Their
+> `DOI Details` carried `SKU Code`, `Site ID`, `cluster`, `ts_id`, `Brand name`,
+> `Category`, `Sub-category`, `Product Name`, `Site Name`, `channel`, `Lifestage`
+> (CPG) and `Store Num`, `Brand`, `Product Type`, `Subtype`, `Style Group Name`
+> (Retail). `sku_standard`, `Channel`, `Type`, `Collection`, `Color`, `Status`,
+> `Seasonality`, `Weight_lbs`, `ABC_Class_FCS_*` and `XYZ` were absent from both.
+> Anything below is a *candidate* to detect, never a name to send blind.
 
 **Demand rates and history**
 `Sales Per Day`, `Sales_Per_Day_2_M`, `Forecast_Per_Day`, `sales_last7days`,
@@ -246,7 +255,7 @@ One row per entity, as of the experiment's run date. Column groups observed:
 `OOS_Episode_Details`
 
 **Money**
-`selling_price`, `AVG COGS`, `COGS`, `Margin%`, `soh_value`,
+`Selling Price`, `Cost`, `COGS`, `Margin%`, `soh_value`,
 `Reorder_now_value`, `Excess_Stock_value`, `Dead_Stock_value`,
 `Potential_Sales_Loss_value`, `potential_stock_wastage_value`
 
@@ -355,20 +364,39 @@ exists.
 
 ## 11. Joining the datasets
 
-The join key across `Supply Plan`, `Supply Plan Value`, `DOI Details` and
-`Stock Transfer` is:
+**Derive the join key from the live column lists — do not assume one.** An earlier
+version of this document specified `sku_standard + Channel`. That key is
+**unfollowable in both observed workspaces**: neither `sku_standard` nor `Channel`
+exists, and `Supply Plan` has **no channel column at all**, so a sku × channel join
+cannot be performed there.
+
+What was actually measured:
+
+| | `DOI Details` | `Supply Plan` |
+|---|---|---|
+| CPG experiment | `SKU Code`, `Site ID`, `cluster`, `ts_id`, `channel` | `SKU Code`, `Site ID` — **no channel** |
+| Retail experiment | `Store Num`, `Subtype`, `Brand`, … | `Store Num`, `Subtype`, `Brand`, … |
+
+So the usable shared grain in the CPG experiment is **`SKU Code` + `Site ID`**, and
+`channel` / `cluster` / `ts_id` exist only on `DOI Details`.
 
 ```
-sku_standard + Channel
+1. List the non-date columns of both datasets from the live column list.
+2. The join key is their INTERSECTION of entity-identifying columns.
+3. Name the key you used in the answer.
+4. If the intersection is empty, say the two datasets cannot be joined in this
+   experiment and answer from one of them.
 ```
 
 Cautions:
 
-- `DOI Details` also carries `cluster` and `ts_id`
-  (`<sku>_<Channel>_<cluster>`); `Supply Plan` does not. Join at
-  **sku × channel** and do not introduce `cluster` into a joined view.
-- Row counts should match at that grain — both datasets carried the same entity
-  count in one observed workspace. If they diverge, say so rather than silently
+- Columns present on only one side (in the CPG experiment: `channel`, `cluster`,
+  `ts_id` on `DOI Details`) must **not** enter a joined view — joining on a key
+  finer than the coarser dataset's grain fans rows out and double-counts.
+- Row counts should match at that grain — both datasets carried 2,379 entities in
+  the observed CPG workspace, and `Supply Plan`'s Σ `Beginning Inventory` for the
+  first period equalled `DOI Details`' Σ `Stock_On_Hand` (22,208) exactly, which is
+  a useful cross-dataset check. If they diverge, say so rather than silently
   inner-joining away entities.
 - The connector cannot join server-side. Fetch each dataset with the same
   filters and align them yourself, or ask two focused questions.

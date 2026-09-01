@@ -234,22 +234,60 @@ set and state the window explicitly: "over the 5 eligible months
 
 ---
 
-## 3. Bias
+## 3. Bias — two conventions, and they differ by exactly 100
 
-Whether the forecast systematically runs high or low.
+**There are two bias scales in this system. Confusing them is a ~100-point error.**
+
+### 3a. The STORED `<date> Bias` column — unbiased at 0
+
+Verified live to 14 decimal places. For one SKU with `Sales` 41,
+`Locked ML Forecast Lag_1` 21 and `Abs Error` 20, the stored `2026-07-31 Bias`
+read `-48.78048780487805`:
 
 ```
-bias = (Σ sum(baseline_m) / Σ sum(actual_m)) * 100     over the chosen months
+stored bias = (forecast − actual) / actual × 100        signed percentage error
 
-  = 100   unbiased
-  > 100   over-forecasting  (forecast exceeds actual)
-  < 100   under-forecasting (forecast below actual)
+     0   unbiased
+   > 0   over-forecasting   (forecast above actual)
+   < 0   under-forecasting  (forecast below actual)
 ```
 
-Undefined when `Σ sum(actual_m) = 0` — report it as not computable, not as zero.
+`(21 − 41) / 41 × 100 = −48.7805…` — an exact match. This is the textbook
+signed-percentage-error convention.
 
-This is a **ratio × 100**, not a percentage error. "Bias 112" means the forecast
-totalled 12% above actuals. Say it in words as well as the number.
+**The trap:** the ratio convention below would have given `21/41 × 100 = 51.22`
+for that same row — which happens to be the value of the stored **`Accuracy`**
+column, not `Bias`. Reading the stored `Bias` on the ratio scale reports a 48.8%
+under-forecast as a 48.8-point *over*-forecast, or feeds `|bias − 100| = 148.78`
+into a downstream formula.
+
+### 3b. A bias YOU compute — either scale, but name it
+
+```
+signed % error  = (Σ forecast − Σ actual) / Σ actual × 100     0   = unbiased
+ratio × 100     =  Σ forecast / Σ actual × 100                 100 = unbiased
+
+They are the same number offset by 100:   signed = ratio − 100
+```
+
+Measured over the 10 eligible months: Σ forecast 50,632, Σ actual 64,781 →
+ratio **78.16**, signed **−21.84**. Both say the same thing: the frozen baseline
+ran about 22% below actuals.
+
+**Prefer the signed form**, because it matches the stored `<date> Bias` column and
+so the two are directly comparable. If you report the ratio, say "unbiased at
+100" in the same breath.
+
+### 3c. Rules
+
+- **Never mix the scales in one table or one sentence.** A column of stored
+  `<date> Bias` values and a computed ratio in the next row are 100 apart.
+- **Always state the convention** with the number: "bias −21.84 (signed, 0 =
+  unbiased)" or "bias 78.16 (ratio, 100 = unbiased)".
+- Any formula taking a "distance from unbiased" must use the right origin:
+  `|bias − 0|` for a stored `<date> Bias` or a signed figure, `|bias − 100|` for a
+  ratio. See the risk skill's `bias_gap`.
+- Undefined when `Σ actual = 0` — report as not computable, not as zero.
 
 ---
 
