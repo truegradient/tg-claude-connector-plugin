@@ -551,6 +551,8 @@ Do not answer yes or no on your own authority.
 
 ## References
 
+- `../../references/COLUMN-SEMANTICS.md` — column meanings; the stored risk,
+  accuracy and bias fields and their conventions
 - `../../references/LOCK-FAMILIES.md` — choosing the baseline lock family and lag
 - `../../references/METRICS.md` — accuracy §2, bias §3, contribution §4, broken functions §0
 - `../../references/SAFETY-CONTRACT.md` — §15 on trust labels

@@ -403,8 +403,13 @@ Cautions:
 
 ## 12. `Stock Transfer`
 
-Narrow dataset: `sku_standard`, `Channel`, `From_Facility`,
-`sales_loss_stock_transfer`, `reorder_stock_transfer`, `total_stock_transfer`.
+Documented columns (from TrueGradient's own dataset knowledge base):
+`Component SKU` (most granular item code), `Warehouse` (this row's warehouse —
+receiving or reference node), `From_Facility` (the warehouse stock moves **from**),
+`sales_loss_stock_transfer` (transfer quantity that prevents potential sales loss),
+`reorder_stock_transfer` (transfer quantity that reduces a reorder),
+`total_stock_transfer` (the sum of those two). Older exports may instead carry
+`sku_standard` / `Channel` as the identity pair — read the live list.
 
 `Channel` here is the **receiving** node and `From_Facility` the sending node.
 Use it for redeployment questions and to explain the pre/post-transfer gap in §8.

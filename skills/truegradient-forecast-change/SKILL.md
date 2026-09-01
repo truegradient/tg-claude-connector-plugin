@@ -214,6 +214,8 @@ change.
 
 ## References
 
+- `../../references/COLUMN-SEMANTICS.md` — what each forecast family means, so a
+  comparison pairs two things that are actually comparable
 - `../../references/LOCK-FAMILIES.md` — lock families and lags; why a lag
   difference is not a forecast change
 - `../../references/SAFETY-CONTRACT.md` — §10 on causal claims

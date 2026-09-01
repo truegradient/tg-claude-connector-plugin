@@ -146,8 +146,10 @@ column's place, same formulas, current month still held out of the pooled figure
 
 - Detect the column first. It is **absent in many workspaces** — say so rather
   than answering on a different family.
-- There is no consensus `Abs Error` column, so the numerator is always the netted
-  fallback `|Σactual − Σconsensus|`. Say that you used it.
+- Check for `<date> Consensus Forecast Abs Error` first — it is in the documented
+  schema, though absent from both observed workspaces. Present → use it, same as
+  the lock's own abs-error column. Absent → the numerator is the netted fallback
+  `|Σactual − Σconsensus|`, and say that you used it.
 - Consensus is **not frozen** — it can be edited after the fact, so say the figure
   is not a frozen-baseline measurement, and name the family in the answer and the
   footer.
@@ -410,6 +412,8 @@ Full detail: `../../references/METRICS.md` §7.
 
 ## References
 
+- `../../references/COLUMN-SEMANTICS.md` — what each column means and which
+  forecast family answers which question
 - `../../references/LOCK-FAMILIES.md` — **choosing the baseline: global vs
   secondary locks, lags, and the silent pairing trap**
 - `../../references/METRICS.md` — exact formulas, the broken-function list

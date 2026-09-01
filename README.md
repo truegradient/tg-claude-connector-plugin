@@ -349,6 +349,7 @@ references/
   TOOL-GUIDE.md                the 5 tools: args, shapes, errors, worked example
   SUPPLY-DATA-CONTRACT.md      supply/inventory datasets, routing rule, traps
   LOCK-FAMILIES.md             lock families, lags, baseline selection
+  COLUMN-SEMANTICS.md          what each column MEANS and which one to pick
 skills/
   truegradient-forecast-lookup/SKILL.md
   truegradient-forecast-accuracy/SKILL.md

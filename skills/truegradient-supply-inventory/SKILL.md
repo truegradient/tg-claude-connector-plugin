@@ -199,7 +199,9 @@ reflect the workspace's configuration. Cite them as stored.
 
 | Concept | Read from | Do not |
 |---|---|---|
-| days of cover, now | `Days on Inventory`, `DOI_Current_Stock` | divide SOH by a rate yourself |
+| days of cover, now | `Days on Inventory` — **the primary coverage signal when both it and `DOI_Current_Stock` exist** | divide SOH by a rate yourself |
+| usable stock now | `Stock_On_Hand` | add `In Transit` or `Open PO` into it — those are **pending, not available** |
+| demand rate | `Sales Per Day` (realized) vs `Forecast_Per_Day` (expected) | use one where the question means the other |
 | days of cover, over time | `Days On Inventory` / `...With Pending` (Supply Plan) | recompute |
 | stockout timing | `Current_OOS_Date`, `OOS_Episode_Details`, `Total_Projected_OOS_Days` | project from daily rates |
 | what to order now | `TG Reorder now` — or `updated_TG_Reorder_now` **if present** | report a pre-transfer figure as post-transfer |
@@ -346,6 +348,8 @@ Out of scope entirely — say so:
 
 ## References
 
+- `../../references/COLUMN-SEMANTICS.md` — column meanings, the `Variable`
+  vocabulary and its unit classes, coverage-signal precedence
 - `../../references/SUPPLY-DATA-CONTRACT.md` — the two datasets, the long shape,
   the twelve variables, the balance and transfer traps
 - `../../references/SAFETY-CONTRACT.md` — workspace, freshness, gaps, causal

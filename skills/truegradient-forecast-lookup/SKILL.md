@@ -207,6 +207,8 @@ Out of scope entirely — say so:
 
 ## References
 
+- `../../references/COLUMN-SEMANTICS.md` — which forecast family to read, and
+  which family the uncertainty band belongs to
 - `../../references/SAFETY-CONTRACT.md` — the hard rules
 - `../../references/DATA-CONTRACT.md` — column families, grain, what varies
 - `../../references/COLUMN-DISCOVERY.md` — runtime discovery, the AB-class rule

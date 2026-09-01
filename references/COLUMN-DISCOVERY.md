@@ -13,6 +13,13 @@ can differ. Two workspaces almost always differ.
 
 ## The discovery procedure
 
+> **Names here, meanings in `COLUMN-SEMANTICS.md`.** This file finds columns and
+> checks they hold data. Once you have candidates, that file tells you which one
+> actually answers the question — which forecast family is the accuracy basis,
+> which is the operational view, which family the uncertainty band belongs to,
+> and which coverage signal wins when two exist. Choosing a plausible column over
+> the correct one produces a confident wrong answer that no validation catches.
+
 ### Step 1 — get the authoritative list
 
 ```

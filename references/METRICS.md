@@ -99,9 +99,12 @@ When the question *is* a consensus question:
 
 2. Use the same formulas — §2 accuracy, §3 bias, §6 directional error.
 
-3. There is NO "Consensus Forecast Abs Error" column. The numerator is always
-   the netted fallback  |Σactual − Σconsensus|  — say so, and say that netting
-   lets one item's over-forecast cancel another's under-forecast.
+3. Look for a "<date> Consensus Forecast Abs Error" column first. It IS part of
+   TrueGradient's documented schema, though it was absent from both observed
+   workspaces. When present it is the preferred numerator, exactly as the lock's
+   own abs-error column is. Only when it is absent is the numerator the netted
+   fallback  |Σactual − Σconsensus|  — and then say so, and say that netting lets
+   one item's over-forecast cancel another's under-forecast.
 ```
 
 **Four things must be said in any consensus figure:**
