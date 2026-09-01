@@ -150,6 +150,57 @@ reading the docs would have caught.
   the lock extended 12 months past the last actual — so the measurable window is
   the intersection, 10 months of 24.
 
+### Fixed on a third pass — the last untested surfaces
+
+Testing `Final DA Data Value`, the full `Variable` vocabulary, `SnOP Comments` and
+the `UNKNOWN` grain value found five more, plus two slips of my own caught in a
+self-audit.
+
+- **A placeholder grain value carried a quarter of the error.** `Category` =
+  `UNKNOWN` on **603 of 2,379 rows** — the largest single group, 25% of the
+  portfolio, with `Product Name` and `Brand name` also `UNKNOWN`. Unmapped master
+  data, and it has real sales: on 2026-07-31 it held 1,370 of 6,364 units of
+  actuals and **1,332 of 5,346 units of absolute error** against a locked forecast
+  of 56 units. Portfolio accuracy that month reads 16.0% with it and 19.6%
+  without. The plugin had no rule for this. It now keeps the volume in the total —
+  it is real — but always breaks the group out on its own line as unmapped master
+  data and states its effect, because folding a mapping gap into a model-accuracy
+  figure blames the forecast for something it did not do. `COLUMN-DISCOVERY.md`
+  step 4e, with pointers from the accuracy and risk skills.
+- **`Forecast Per Day` is a rate, and days measures must never be summed across
+  entities.** The contract said "nine measures are units, three are days", which
+  did not match its own table and left the rate unclassified. It is eight units,
+  three days, one rate. And the existing rule only forbade totalling *across*
+  `Variable` values — summing *within* a days measure was untouched, so
+  `sum("2026-09-30")` filtered to `Days On Inventory` returned **387,054** across
+  2,379 entities. Arithmetically fine, meaningless. Confirmed the fix: `avg`
+  returns 124–202 days of cover per category.
+- **The `Variable` vocabulary is eleven here, not twelve.** `Open Purchase Orders`
+  was absent, with `In Transit` and `Total Inbounds` both 0. All twelve stay
+  documented as the union across workspaces, with an absent measure to be read as
+  unmodelled rather than zero.
+- **`SnOP Comments` is present and null on every row.** `is_not_null` returned 0
+  rows across all 2,379. The change skill's only evidence path for "why" has no
+  data here, so it now says no planner comment is recorded rather than implying
+  the evidence was weighed. Generalised in `COLUMN-DISCOVERY.md` step 4d together
+  with `current_month_sales_tilldate` and the empty `Stock Transfer`: presence and
+  population are two separate checks, and an empty filtered read comes back as
+  `returned: 0` with `columns: []`.
+- **`Final DA Data Value` uses the identical column vocabulary** — same
+  `<date> Sales`, same lock family, same `Abs Error`. Only the dataset name
+  separates units from money, so the query succeeds and the number is plausible
+  either way. New `DATA-CONTRACT.md` §5.8 requires naming the dataset in the
+  footer, and records that accuracy differs by basis: on 2026-07-31 Cosmetics had
+  value abs error (8,073) exceeding value actuals (7,959) — negative accuracy in
+  money for a group whose unit accuracy was positive.
+- Two of my own: `DATA-CONTRACT.md` §5.8 was written as an `h2` among `h3`
+  siblings, and the supply skill still referred to "the twelve `Variable`
+  measures" after the count was corrected. Both fixed.
+
+Confirmed on both experiments: the `trust_zone` distribution pattern holds in
+Retail too (`Not Available` present again, 6 items at 0% volume), and
+`% Contribution Last 3 Months` summed to 100.00% there as well.
+
 ### Fixed on a second live pass — the untested surfaces
 
 The first pass only exercised one experiment. Testing the second one, plus the

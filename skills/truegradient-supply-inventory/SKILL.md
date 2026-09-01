@@ -49,7 +49,10 @@ These apply even if you cannot load the reference files:
    has.
 3. **`Supply Plan` is long, not wide.** Every read must filter `Variable`.
    Its month columns are **bare dates** (`2026-09-30`), not `<date> <Family>`.
-4. **Never total across `Variable` values** — nine are units, three are days.
+4. **Never total across `Variable` values** — eight are units, three are days, and
+   `Forecast Per Day` is a rate. And **never sum a days or rate measure across
+   entities** either: summing `Days On Inventory` over 2,379 SKUs returned 387,054,
+   which is arithmetically fine and meaningless. Use `avg` or report per entity.
 5. **Never assert the inventory balance identity as arithmetic**, and never infer
    unmet demand by subtracting forecast from supply. `End Inventory` is floored
    at zero per entity, so shortfalls are discarded. Read loss from
@@ -301,7 +304,7 @@ Out of scope entirely — say so:
 
 - pricing, markdown, elasticity, promotion ROI (`pricing-promotion-optimization`)
 - supplier or PO master data, capacity or production scheduling beyond what the
-  twelve `Variable` measures contain
+  live `Variable` measures contain
 - writing back a reorder, PO or transfer — every connector tool is read-only
 
 ## References

@@ -137,7 +137,12 @@ delta_pct = (delta / |old_v|) * 100      if old_v != 0
 than a 6% move on 90,000. Sort by `|delta|` and show both columns.
 
 **8. Gather what evidence exists for "why".**
-- Read `SnOP Comments` for the affected rows if the column exists. Quote verbatim.
+- Read `SnOP Comments` for the affected rows if the column exists — **and check it
+  actually holds text.** Measured live, the column was present and **null on every
+  one of 2,379 rows**: `is_not_null` returned 0 rows. A present-but-empty comment
+  column means the same as an absent one, so say no planner comment is recorded
+  rather than implying the evidence was looked for and found wanting. Quote
+  verbatim when there is something to quote.
 - Check whether a planner-edit family (`Graph Reviewed`, `Table Edited`) differs
   from the model family — evidence that a human touched it, without saying why.
 - Check whether prior-period actuals diverged from the baseline — context, not cause.

@@ -99,8 +99,11 @@ Consequences:
 
 ## 4. The `Variable` values
 
-Twelve measures were observed. Confirm the live set with a `group_by:
-["Variable"]` probe before relying on any of them.
+Twelve measures have been observed across workspaces; a second workspace showed
+**eleven** — `Open Purchase Orders` was absent there, with `In Transit` and
+`Total Inbounds` both reading 0. The table below is the union, not a guarantee.
+**Confirm the live set with a `group_by: ["Variable"]` probe before relying on any
+of them**, and treat an absent measure as unmodelled rather than zero.
 
 | `Variable` | Meaning | Unit |
 |---|---|---|
@@ -117,8 +120,30 @@ Twelve measures were observed. Confirm the live set with a `group_by:
 | `Days On Inventory With Pending` | cover including inbounds/planned receipts | days |
 | `Safety Stock Days` | configured safety-stock target | days |
 
-**Mixed units.** Nine measures are units, three are days. Never total across
-`Variable` values, and never chart them on one axis without saying so.
+**Three unit classes, not two.** Of the twelve: **eight are units**, **three are
+days**, and **one is a rate** — `Forecast Per Day` is units/day and belongs to
+neither of the other groups. Never total across `Variable` values, and never chart
+them on one axis without saying so.
+
+**Never sum a days or rate measure across entities.** The rule above is about
+mixing measures; this one is about summing *within* one. Measured live:
+`sum("2026-09-30")` filtered to `Days On Inventory` returned **387,054** across
+2,379 entities — the arithmetic succeeds and the number means nothing, because
+days of cover do not add up across SKUs. Same for `Forecast Per Day`.
+
+```
+units measures (Beginning/End Inventory, Forecast, In Transit,
+  Open Purchase Orders, Total Inbounds, Reorder Plan, Reorder Received)
+      -> sum across entities is valid
+
+days measures (Days On Inventory, Days On Inventory With Pending,
+  Safety Stock Days)
+      -> use avg, or a distribution, or report per entity. NEVER sum.
+
+rate measures (Forecast Per Day)
+      -> sum only if you genuinely want portfolio demand per day; otherwise avg.
+         Say which you did.
+```
 
 ---
 
@@ -364,7 +389,8 @@ Use it for redeployment questions and to explain the pre/post-transfer gap in §
 - The module's six-dataset map, each dataset's routing summary, the live column
   lists, and the `Supply Plan` long shape: read from the TrueGradient connector
   via `tg_resolve_datasets`.
-- The twelve `Variable` values, the five `Stock_Risk_Level` values, the zero-floor
+- The `Variable` vocabulary (twelve in one workspace, eleven in another — see §4),
+  the five `Stock_Risk_Level` values, the zero-floor
   additivity failure, the pre/post-transfer relationship, and the 120-day
   reorder-to-receipt offset: **measured in one workspace's
   `inventory-optimization` experiment.** One workspace, one experiment. Treated

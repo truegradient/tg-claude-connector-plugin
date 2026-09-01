@@ -119,6 +119,16 @@ brand level for management review. If unstated, default to the coarsest grain th
 question implies and offer to drill down. Ranking 50,000 SKUs is rarely useful —
 ranking 12 categories usually is.
 
+**Placeholder grain values.** If a grain column carries `UNKNOWN` (or `NA`,
+`Unmapped`, `Other`, empty string), that is unmapped master data, not a real
+group. Measured live, `Category = UNKNOWN` held 603 of 2,379 rows and **24.9% of
+one month's absolute error** against a locked forecast of 56 units on 1,370 units
+of actuals. Keep the volume in the total — it is real — but always break the group
+out on its own line, named as unmapped master data, and say what it does to the
+figure. Portfolio accuracy for that month read 16.0% with it and 19.6% without.
+Folding a mapping gap into a model-accuracy number blames the forecast for
+something it did not do. See `../../references/COLUMN-DISCOVERY.md` step 4e.
+
 **5. Detect what the workspace already computed — before anything else.**
 
 From the live column list, record which of these are present:

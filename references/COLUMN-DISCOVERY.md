@@ -102,6 +102,51 @@ between experiments, and re-derive the eligible set per experiment.
 The binder error is actually helpful here — it lists `Candidate bindings`, which
 names real nearby columns. Read them instead of guessing again.
 
+### Step 4d — a column's presence does not mean it holds data
+
+Three columns in one live workspace were present, non-null in the schema, and
+carried nothing usable:
+
+| Column | Presence | Reality |
+|---|---|---|
+| `current_month_sales_tilldate` | on all 2,379 rows | sums to **exactly 0** |
+| `SnOP Comments` | in the column list | **null on every row** — `is_not_null` returned 0 rows |
+| `Stock Transfer` (dataset) | `resolved: true` | 0 columns; reading it 502s |
+
+So detection is two steps, not one: **the column exists**, and **it has values**.
+For a numeric column, `sum` it and check the total is non-zero before reporting it.
+For a text column, filter `is_not_null` and check the count. An empty result comes
+back as `returned: 0` with `columns: []` — an empty column list on a filtered read
+means no matching rows, not a failure.
+
+Report "this workspace records none" rather than publishing the zero or the blank.
+A zero that came from an empty column is indistinguishable, in the answer, from a
+measured zero — and only one of them is a fact.
+
+### Step 4e — placeholder grain values distort every portfolio figure
+
+`UNKNOWN` is a real value in live grain columns, not a null. Measured: `Category`
+= `UNKNOWN` on **603 of 2,379 rows** — the single largest group, 25% of the
+portfolio — with `Product Name` and `Brand name` also reading `UNKNOWN`. These are
+unmapped master-data rows, and they carry real sales.
+
+They are not a rounding detail. For 2026-07-31 they held 1,370 of 6,364 units of
+actuals (21.5%) and **1,332 of 5,346 units of absolute error (24.9%)**, against a
+locked forecast of just 56 units. Portfolio accuracy for that month reads 16.0%
+including them and 19.6% excluding them.
+
+So:
+
+- **Keep them in the total** — the volume is real and dropping it overstates
+  accuracy.
+- **Always break them out as their own line**, named as unmapped master data, and
+  say what they do to the figure. Folding a mapping gap into a model-accuracy
+  number blames the forecast for something the forecast did not do.
+- Never treat `UNKNOWN` as a category, brand or product in a ranking narrative,
+  and never silently exclude it. Do the same for any grain value that is
+  obviously a placeholder — `UNKNOWN`, `NA`, `N/A`, `Unmapped`, `Other`, empty
+  string — and say which convention you found.
+
 ### Step 5 — detect optional columns before relying on them
 
 Check the live list for each of these. Presence changes your approach:

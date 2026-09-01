@@ -235,6 +235,30 @@ Two shapes worth knowing:
 
 ---
 
+### 5.8 `Final DA Data Value` uses the *same* column names
+
+Verified live: `Final DA Data Value` carries the identical column vocabulary to
+`Final DA Data` — same `<date> Sales`, same `<date> Locked ML Forecast Lag_1`, same
+`Abs Error`, same lock family name. **Only the dataset name distinguishes units
+from money.**
+
+That makes the mix-up easy and invisible: the query succeeds either way and the
+number is plausible either way. July 2026 read 6,364 in `Final DA Data` and
+77,650 for Food alone in `Final DA Data Value`. Nothing in a column name will warn
+you.
+
+- Decide the dataset from the question — units/quantity/volume → `Final DA Data`;
+  revenue/value/money/working capital → `Final DA Data Value` — and **name the
+  dataset in the provenance footer every time.**
+- Never combine a figure from one with a figure from the other, and never carry a
+  ratio computed in one over to the other.
+- Accuracy differs between them, because the value dataset weights by price:
+  measured on 2026-07-31, Cosmetics had value abs error (8,073) **exceeding** value
+  actuals (7,959) — a negative accuracy in money terms for a group whose unit
+  accuracy was positive. Say which basis a metric was computed on.
+
+---
+
 ## 6. Ragged coverage is normal
 
 Different families cover different months. In one observed export:
