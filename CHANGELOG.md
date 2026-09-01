@@ -1,9 +1,16 @@
 # Changelog
 
-## 1.2.3 — 2026-09-01
+## 1.0.0 — 2026-09-01
 
-Corrects the accuracy formula, makes the risk skill read the metrics the
-workspace already stores rather than recomputing them, drops cross-cycle
+First release from this repository, and the first with a tagged git history.
+
+The plugin existed before this point as a series of uploaded archives; that
+iteration is kept below under **Pre-repository history** for the reasoning it
+records, but those numbers were never tagged and no code for them lives here.
+Versioning starts fresh at 1.0.0.
+
+This release corrects the accuracy formula, makes the risk skill read the metrics
+the workspace already stores rather than recomputing them, drops cross-cycle
 comparison — which depended on data the live roster usually does not carry — and
 adds first-class handling for `Consensus Forecast`.
 
@@ -168,7 +175,15 @@ adds first-class handling for `Consensus Forecast`.
   missing lock. If no `Locked ...` family exists, the answer is still that no
   accuracy can be measured.
 
-## 1.2.2 — 2026-08-31
+## Pre-repository history
+
+These entries predate this repository. They are kept for the reasoning they
+record — why calculations run on the global lock, why the engine's accuracy
+aggregations are unusable, why a skill description over 1,024 characters stops
+the plugin loading. The version numbers below were never tagged, and the 1.0.0
+above is not a re-release of the 1.0.0 named here.
+
+### 1.2.2 — 2026-08-31  *(pre-repository)*
 
 Packaging fix. No behavioural change.
 
@@ -186,7 +201,7 @@ enumeration of the reorder and inbound terms.
 
 All five skill descriptions now measure 641–928 characters.
 
-## 1.2.1 — 2026-08-31
+### 1.2.1 — 2026-08-31  *(pre-repository)*
 
 Corrects two things 1.2.0 got wrong by hedging.
 
@@ -237,7 +252,7 @@ Only the global lock at one lag exists in the observed workspace. The secondary
 it is classified by its leading word, and its lag is read from the live list rather
 than assumed.
 
-## 1.2.0 — 2026-08-31
+### 1.2.0 — 2026-08-31  *(pre-repository)*
 
 Schema change: the frozen baseline is no longer a single `Locked ML Forecast`
 column. It is now a **family × lag** choice across three lock families, two of
@@ -321,7 +336,7 @@ says otherwise.
   exist, the skills report them, use the widest paired coverage, say so, and offer
   the alternatives — there is no basis in the data for preferring one lag.
 
-## 1.1.0 — 2026-08-31
+### 1.1.0 — 2026-08-31  *(pre-repository)*
 
 Adds supply and inventory coverage. The `inventory-optimization` module was
 explicitly out of scope in 1.0.0; it is now served by a fifth skill.
@@ -386,7 +401,7 @@ explicitly out of scope in 1.0.0; it is now served by a fifth skill.
   is authoritative — but the forecast skills' documentation still shows the
   unsuffixed form. Worth aligning in a future release.
 
-## 1.0.0 — 2026-08-03
+### 1.0.0 — 2026-08-03  *(pre-repository)*
 
 First release.
 

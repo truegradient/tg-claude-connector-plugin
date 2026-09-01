@@ -4,7 +4,7 @@ Five skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.2.3
+Version 1.0.0
 
 ---
 
@@ -313,14 +313,14 @@ Semver, read for a plugin made of prompts rather than code:
   something it previously declined.
 - **major** — a metric definition changes, or a rule that previously forbade
   something now permits it (or the reverse). Anyone comparing figures across the
-  boundary needs to know. The 1.2.3 accuracy-formula correction is the shape of
-  change that would justify one.
+  boundary needs to know. An accuracy-formula correction is the shape of change
+  that would justify one.
 
 Before pushing:
 
 ```bash
 ./scripts/verify-plugin.sh          # must exit 0
-git tag -a v1.2.3 -m "1.2.3"        # tag matches plugin.json exactly
+git tag -a v1.0.0 -m "1.0.0"        # tag matches plugin.json exactly
 ```
 
 `TEST-CHECKLIST.md` is the acceptance gate for a release against a real
