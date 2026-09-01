@@ -91,6 +91,13 @@ These apply even if you cannot load the reference files:
 6. Exclude the current month; exclude months lacking either required column.
 7. Items with fewer than 3 eligible months: list them **separately** as
    "insufficient history", not mixed into the ranking.
+   **At item grain this is usually not computable** — a per-item month count needs
+   row-level reads across every eligible month's columns, and a computed read
+   cannot paginate (rule 3b). Use the stored proxy instead: a null
+   `rolling_accuracy` / `overall_accuracy`, or a `trust_zone` of blank or
+   `"Not Available"`, marks an item the workspace could not measure. Say you used
+   the proxy and that it is not a per-item history audit. At group grain, where
+   the month count comes from the same grouped call, compute it properly.
 8. Never impute an accuracy from a group average and present it as an item's own.
 9. End with the provenance footer.
 
@@ -99,7 +106,16 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 ## Procedure
 
 **1–3. Identify, pick, discover.**
-`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_id="<id>", tables=["Final DA Data"])`.
+
+**Scope the resolve call with `tables`, and resolve one experiment at a time.**
+Unscoped it returns every dataset in full — measured at **72,557 characters** for a
+single IBP experiment, which exceeds the response limit and leaves you with no
+column vocabulary at the one mandatory discovery step. Add
+`"Final DA Data Value"` when the question is about money. If it still overflows,
+the payload is saved to a file the error names — parse it — or fall back to
+`tg_dataset_info(experiment_id, dataset_name)`, which returns the column list
+inline.
 
 **Do not filter the roster by `module="demand-planning"`.** Forecast data does not
 only live in demand-planning experiments: in an IBP workspace every experiment is
@@ -140,7 +156,8 @@ From the live column list, record which of these are present:
 
 **Stored accuracy does not replace the computed figure — it accompanies it.** The
 stored columns' window is not readable and their scale is not documented; measured
-on one dataset, `avg` gave 1.47%, volume-weighted 13.04%, and sum-based 26.38%.
+on one dataset, `avg` gave 1.47% and sum-based 26.38%, with a volume-weighted roll-up in between —
+its exact value depends on the grain you weight at.
 Report the computed figure with its window, family and lag, and quote the stored
 values beside it as the workspace's own. Never publish a bare `avg` of them.
 
@@ -229,8 +246,10 @@ PREFERRED — no row read at all:
 
   Label that an approximation. NEVER publish a bare avg() as a group or
   portfolio accuracy: measured live, avg(overall_accuracy) across rows is
-  1.47% where the cell-weighted roll-up is 13.04% and the sum-based
-  computation is 26.38%. Reporting the bare avg is a 25-point error.
+  1.47% against a sum-based computation of 26.38% — reporting the bare avg is
+  a ~25-point error. A volume-weighted roll-up lands between them, and exactly
+  where depends on the grain you weight at, so quote your own number rather
+  than one from this file.
 
 IF you genuinely need row-level values:
   partition with filters, one call per grain value, each slice under page_size:
@@ -247,8 +266,9 @@ present a partial read as a portfolio ranking.
 full row read is not available, so a group-level stored accuracy is either
 volume-weighted from per-group `avg` and `sum(contribution)` — an approximation,
 say so — or computed from `sum` aggregations per `METRICS.md` §2 and labelled
-derived. Measured, the gap is real: plain `avg` gave 1.47% where volume-weighted
-gave 13.87% and the sum-based computation gave 26.38%. Name which one you used.
+derived. Measured, the gap is real: plain `avg` gave 1.47% and the sum-based computation gave 26.38%, with a
+volume-weighted roll-up between them whose value depends on the weighting grain.
+Name which one you used and at what grain.
 
 **8. Assemble the four inputs per item or group.**
 
@@ -489,8 +509,9 @@ What this is built from
   bias          STORED — <date> Bias over the same months as rolling_accuracy,
                 volume-weighted to category grain (windows matched, step 9c).
                 Signed scale, 0 = unbiased — NOT the ratio scale.
-  character     DERIVED = |bias − 100| / (100 − accuracy); ≥0.6 systematic,
-                ≤0.3 volatility
+  character     DERIVED = |bias − 0| / (100 − accuracy); ≥0.6 systematic,
+                ≤0.3 volatility. Origin 0 because Bias is the stored signed
+                scale (step 9c). Using origin 100 here is a ~100-point error.
   ranking      DERIVED ordering only — Σ volume in Critical + Low Trust per
                 group, descending. Every input is stored; no threshold and no
                 score of ours enters it.

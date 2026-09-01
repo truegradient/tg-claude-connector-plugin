@@ -33,7 +33,16 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 `tg_whoami` → note `company_name`. Not authenticated? Stop.
 
 **2. Pick the experiment.**
-`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_id="<id>", tables=["Final DA Data"])`.
+
+**Scope the resolve call with `tables`, and resolve one experiment at a time.**
+Unscoped it returns every dataset in full — measured at **72,557 characters** for a
+single IBP experiment, which exceeds the response limit and leaves you with no
+column vocabulary at the one mandatory discovery step. Add
+`"Final DA Data Value"` when the question is about money. If it still overflows,
+the payload is saved to a file the error names — parse it — or fall back to
+`tg_dataset_info(experiment_id, dataset_name)`, which returns the column list
+inline.
 
 **Do not filter the roster by `module="demand-planning"`.** Forecast data does not
 only live in demand-planning experiments: in an IBP workspace every experiment is

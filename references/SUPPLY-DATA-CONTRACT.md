@@ -120,6 +120,11 @@ of them**, and treat an absent measure as unmodelled rather than zero.
 | `Days On Inventory With Pending` | cover including inbounds/planned receipts | days |
 | `Safety Stock Days` | configured safety-stock target | days |
 
+> **Mind the capital O.** `Supply Plan` uses `Days On Inventory`; `DOI Details`
+> uses `Days on Inventory` (lowercase "on"). One character, two datasets, and the
+> wrong one is a binder error rather than a wrong number — recoverable, but copy
+> the spelling from the live column list of the dataset you are actually reading.
+
 **Three unit classes, not two.** Of the twelve: **eight are units**, **three are
 days**, and **one is a rate** — `Forecast Per Day` is units/day and belongs to
 neither of the other groups. Never total across `Variable` values, and never chart
@@ -231,9 +236,16 @@ workspace's, not a schema.* Read them from the live column list every time.
 `current_year_sales_tilldate`, `current_fiscal_year_sales_tilldate`,
 `sales_deviation_by_day`, `Return_Per_Day`, `%Return`, `age_days`, `Age Months`
 
-**Position and supply inputs**
-`Stock_On_Hand`, `In Transit`, `Open PO`, `DOI_Current_Stock`,
-`Days on Inventory`, `Current_OOS_Date`
+**Position and supply inputs** — units: `Stock_On_Hand`, `In Transit`, `Open PO`.
+Dates: `Current_OOS_Date`. **Days, despite the name:** `DOI_Current_Stock`,
+`Days on Inventory`.
+
+> **`DOI_Current_Stock` is a DAYS figure, not a stock quantity.** The name reads
+> like units and invites adding it into a stock total. Measured live it is
+> identical to `Days on Inventory` on every statistic — sum 390,160, avg 164.00,
+> median 99 — so adding it to `Stock_On_Hand` (22,208) would report 412,368
+> "units" of inventory, an 18× overstatement, with nothing erroring. Units are
+> `Stock_On_Hand`, `In Transit` and `Open PO`, and nothing else in this group.
 
 **Policy**
 `TG Ideal Inventory`, `TG Reorder Point`, `TG Safety Stock`,

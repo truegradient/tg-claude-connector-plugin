@@ -68,8 +68,14 @@ user to connect the connector. Do not call other tools.
 
 Newest first. Every entry is already `Completed`, not trashed, not archived.
 
-**When:** always, before touching data. Pass `module: "demand-planning"` for
-forecast questions to keep the list focused.
+**When:** always, before touching data.
+
+**Do not pass `module` for forecast questions** — see §2.3. It filters on the
+experiment's own label, and in an IBP workspace forecast data lives inside
+`inventory-optimization` experiments, so the filter returns `count: 0` against a
+workspace full of data. For supply questions
+`module="inventory-optimization"` is a reasonable starting point, but treat
+`count: 0` as a signal to retry unfiltered rather than as an answer.
 
 **Two responses that must change your answer:**
 

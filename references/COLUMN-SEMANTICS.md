@@ -74,11 +74,31 @@ every sampled `ML Forecast` inside its band. See the lookup skill, step 5b.
 | Column | Meaning | Direction |
 |---|---|---|
 | `<date> <family> Abs Error` | absolute error of that family | **magnitude only, no direction** |
-| `<date> Deviation *` / `Deviation_*` | signed deviation | `Deviation = Forecast − Sales`; **positive = over-forecast**, negative = under |
+| `<date> Deviation *` / `Deviation_*` | documented as signed; **measured UNSIGNED** | do not read direction from it — see below |
 | `<date> Accuracy` | stored per-month accuracy | higher is better; see `METRICS.md` §2 |
 | `<date> Bias` | stored per-month bias | **signed % error, 0 = unbiased** — not the ratio scale (`METRICS.md` §3a) |
 | `Risk_*` / `Risk_Locked_Lag_N_<date>` | stored risk label | quote it; never derive one |
 | `trust_zone` | stored trust band | the risk classification itself (risk skill §9a) |
+
+> **Verified live: this column is UNSIGNED, despite its name and despite
+> TrueGradient's own documentation.** Measured on 2026-07-31 across 2,379 rows:
+> `Σ Deviation Locked Lag_1` = **5,346**, identical to `Σ Abs Error` = 5,346, while
+> the true signed deviation is `4,692 − 6,364 =` **−1,672**. A `< 0` filter matched
+> **zero rows** — nothing in the column is ever negative.
+>
+> Reading it as a signed value says the forecast ran **high by 5,346** when it ran
+> **low by 1,672** — an inverted sign on a number the planner acts on.
+>
+> **Never take direction from a `Deviation` column.** Compute it:
+> `Σ forecast − Σ actual`, positive = over-forecast. Check the column before
+> trusting it in any workspace: if `min` over it is 0 and it equals the abs-error
+> sum, it is a magnitude column whatever the schema says.
+
+**This is a case where the vendor knowledge base and the live data disagree.** The
+source document states `Deviation = Forecast − Sales`, positive = over-forecast.
+The column does not implement it. Where a documented convention and a measured
+column conflict, **the measurement wins** — and say in the answer that you computed
+direction rather than reading it.
 
 `Consensus Forecast Abs Error` **is** part of the documented schema even though it
 was absent from both observed workspaces. Detect it: when present, it is the
@@ -95,6 +115,13 @@ rare footnote.
 
 `AB_Class` / `AB Class` / `*_ABC_Class` — see the AB_Class rule in
 `COLUMN-DISCOVERY.md`. **"AB class" means A ∪ B, excluding C** — not `= 'A'`.
+
+**Check that a segment filter actually narrows something.** Read the value set
+first (`group_by` the column). Measured live, `AB_Class` held only `A` (977 rows)
+and `B` (1,402) with **no `C` at all**, so "AB class" matched 100% of the dataset.
+The documented risk is dropping business by filtering `= 'A'`; the mirror risk is
+handing back a portfolio number while the user believes they asked for a segment.
+When a filter matches everything, say so.
 
 ---
 
@@ -186,6 +213,14 @@ columns, and a 502 on read). Empty means the transfer model was not run — it d
    window you can (accuracy skill, step 5).
 3. **For "latest", take the most recent month present in that column family** — not
    the most recent month in the dataset. Families have ragged coverage.
+   **But "latest forecast" rarely means the far end of the horizon.** Measured
+   live, the newest `Forecast` month was 2027-07-31, eleven months past the next
+   actionable period, while the newest `Sales` month was 2026-07-31 — the two
+   families do not overlap at all. So: for an **actual**, latest means the newest
+   month the family covers. For a **forecast**, give the nearest upcoming period
+   the planner can still act on, say which month it is, and mention the horizon's
+   end separately if it is useful. Never present two different months as though
+   they were the same month, and say plainly when no month carries both.
 4. **Drop rows where every relevant forecast column is null** before presenting a
    forecast family, rather than showing empty rows.
 5. **Aggregate before presenting.** Never return raw row-level dumps.

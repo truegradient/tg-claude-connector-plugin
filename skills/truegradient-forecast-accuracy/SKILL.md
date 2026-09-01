@@ -50,7 +50,11 @@ These apply even if you cannot load the reference files:
    token, and never invent one.
 7. **Always report the exact month window used and every month excluded, with the
    reason.** An accuracy figure without its window is not an answer.
-8. **Never assign trust-zone labels** ("Critical", "Trusted", …). Thresholds are
+8. **Never assign trust-zone labels** ("Critical", "Trusted", …) — but a stored
+   `trust_zone` column may be **quoted with attribution** (`SAFETY-CONTRACT.md`
+   §15). This workspace's column is populated with exactly those strings, so
+   suppressing it would be withholding the workspace's own data. Quote it, never
+   derive it, never fill one in. Thresholds are
    configured per workspace and no tool can read them. Report raw percentages.
 9. Fewer than 3 eligible months → say the figure is not yet meaningful.
 10. End with the provenance footer.
@@ -60,7 +64,16 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 ## Procedure
 
 **1–3. Identify, pick, discover.**
-`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_id="<id>", tables=["Final DA Data"])`.
+
+**Scope the resolve call with `tables`, and resolve one experiment at a time.**
+Unscoped it returns every dataset in full — measured at **72,557 characters** for a
+single IBP experiment, which exceeds the response limit and leaves you with no
+column vocabulary at the one mandatory discovery step. Add
+`"Final DA Data Value"` when the question is about money. If it still overflows,
+the payload is saved to a file the error names — parse it — or fall back to
+`tg_dataset_info(experiment_id, dataset_name)`, which returns the column list
+inline.
 
 **Do not filter the roster by `module="demand-planning"`.** Forecast data does not
 only live in demand-planning experiments: in an IBP workspace every experiment is
@@ -313,7 +326,12 @@ Full detail: `../../references/METRICS.md` §3.
 Compute accuracy per month rather than pooled, then describe the direction. Needs
 at least 2 eligible months; with fewer, say a trend cannot be computed.
 
-Prefer stored `<date> Accuracy` columns for the series when they exist — they are
+Compute the monthly series from the sums. A stored `<date> Accuracy` column is
+per-row, and the only aggregation that would collapse it to one figure per month
+is an `avg` across rows, which `DATA-CONTRACT.md` §5.6 forbids because it
+misweights — so there is no permitted path from stored per-row accuracies to a
+portfolio month. Quote stored per-row values for individual items, and compute the
+series.
 the workspace's own per-month numbers. If you mix stored and computed months, mark
 which is which; a step in the line caused by a change of method is not a change in
 accuracy.

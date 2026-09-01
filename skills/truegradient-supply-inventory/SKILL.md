@@ -57,9 +57,14 @@ These apply even if you cannot load the reference files:
    eight are units, three are days and `Forecast Per Day` is a rate — but both
    observed workspaces had only **eleven** (`Open Purchase Orders` absent), i.e.
    seven units. Read the live set with the `group_by: ["Variable"]` probe in step 5
-   and classify from that, never from a count in this file. And **never sum a days or rate measure across
-   entities** either: summing `Days On Inventory` over 2,379 SKUs returned 387,054,
-   which is arithmetically fine and meaningless. Use `avg` or report per entity.
+   and classify from that, never from a count in this file.
+   **Never sum a DAYS measure across entities** — summing `Days On Inventory` over
+   2,379 SKUs returned 387,054, arithmetically fine and meaningless. Use `avg`, a
+   median, or report per entity.
+   **A RATE measure may be summed**, but only for a genuine portfolio-per-day
+   figure — "demand is running at 212 units/day" is a legitimate and useful sum.
+   Say which you did, and show the per-entity `avg` beside it when the distribution
+   is skewed.
 5. **Never assert the inventory balance identity as arithmetic**, and never infer
    unmet demand by subtracting forecast from supply. `End Inventory` is floored
    at zero per entity, so shortfalls are discarded. Read loss from
@@ -209,11 +214,11 @@ reflect the workspace's configuration. Cite them as stored.
 | excess | `Excess_Stock`, `Excess_Stock_value` — or `updated_Excess_Stock` **if present** | apply a days-of-supply multiple |
 | working capital | `soh_value` | derive it from units × price yourself |
 | unit economics | `Selling Price`, `Cost`, `COGS`, `Margin%` | use `selling_price` or `AVG COGS` — **those names do not exist** |
+| **risk band** | **`Stock_Risk_Level` — the dataset's own, quoted with attribution** | **derive or infer one** |
 
-The base names in the left column are the ones verified present. The `updated_*` /
-`Final_*` variants were **absent from both observed experiments** (rule 7), so they
-are conditional, not the default.
-| risk band | `Stock_Risk_Level` (quote, attribute) | derive one |
+The base names above are the ones verified present. The `updated_*` / `Final_*`
+variants were **absent from both observed experiments** (rule 7), so they are
+conditional, not the default.
 
 Two derived figures are legitimate, if labelled as calculated:
 

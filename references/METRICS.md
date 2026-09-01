@@ -341,7 +341,10 @@ deviation = forecast - actual
   negative -> under-forecast
 ```
 
-This sign convention matches TrueGradient's documented default.
+This sign convention matches TrueGradient's documented default — but **compute it,
+never read it from a `Deviation` column.** Those are magnitude-only in live data
+despite being documented as signed (`DATA-CONTRACT.md` §5.4). Using one for
+direction inverts the answer.
 
 ---
 
@@ -369,9 +372,11 @@ RMSE           = √( (1/n) · Σ (A − F)² )      in units; penalises large m
   every *row* equally, so a 3-unit SKU moves it as much as a 30,000-unit one, and
   it blows up on rows with near-zero actuals. Quoting one when asked for the other
   is a real error, not a rounding difference.
-- **`bias` here is a ratio × 100, not an error percentage** (§3). It is unbiased
-  at 100, where the textbook percentage-bias convention is unbiased at 0. State
-  the convention with the number.
+- **`bias` comes in two scales and they differ by exactly 100** (§3). The stored
+  `<date> Bias` column is a signed percentage error, **unbiased at 0**. A bias you
+  compute as `ΣF/ΣA × 100` is a ratio, **unbiased at 100**. `signed = ratio − 100`.
+  Prefer the signed form so it is comparable with the stored column, and **always
+  state which scale** with the number. Never put one of each in the same table.
 - If asked for **WAPE or WMAPE**: give `Σ err / Σ act` directly, or give accuracy
   and note that `WMAPE = 100 − accuracy` in percentage points.
 - If asked for **MAPE, MAE or RMSE**: these are row-level averages and cannot be

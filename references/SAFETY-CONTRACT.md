@@ -24,6 +24,13 @@ change, and implying otherwise misleads the user.
 
 ## 2. Use only final data — the convention triple
 
+> **Scope: this section governs FORECAST data.** The `Final DA Data` requirement
+> below cannot be met by `DOI Details`, `Supply Plan`, `Supply Plan Value` or
+> `Stock Transfer`, which are the supply skill's datasets by design. For those,
+> the binding sections are §1, §5–§7, §10–§13, and the provenance footer takes the
+> supply-shaped form in that skill rather than the forecast template in §12.
+
+
 Data is final only when **all three** conditions hold:
 
 1. **The experiment passed the server's gate.** Everything returned by

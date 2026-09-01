@@ -167,11 +167,25 @@ not label an interval "95% confidence" unless a field says so — describe it as
 |---|---|
 | `<date> Forecast Abs Error` | absolute error of the operational forecast |
 | `<date> Locked ML Forecast Lag_N Abs Error` | absolute error of the global lock at lag N |
-| `<date> Deviation Locked Lag_N` | signed deviation of the global lock at lag N |
+| `<date> Deviation Locked Lag_N` | **magnitude, not signed** — see the warning below |
 | `Risk_Locked_Lag_N_<date>` | stored risk label for the global lock at lag N |
 
 Absolute-error columns are **magnitude only** — they carry no direction. To know
 whether the forecast was high or low, compare forecast to actual directly.
+
+> **Verified live: this column is UNSIGNED, despite its name and despite
+> TrueGradient's own documentation.** Measured on 2026-07-31 across 2,379 rows:
+> `Σ Deviation Locked Lag_1` = **5,346**, identical to `Σ Abs Error` = 5,346, while
+> the true signed deviation is `4,692 − 6,364 =` **−1,672**. A `< 0` filter matched
+> **zero rows** — nothing in the column is ever negative.
+>
+> Reading it as a signed value says the forecast ran **high by 5,346** when it ran
+> **low by 1,672** — an inverted sign on a number the planner acts on.
+>
+> **Never take direction from a `Deviation` column.** Compute it:
+> `Σ forecast − Σ actual`, positive = over-forecast. Check the column before
+> trusting it in any workspace: if `min` over it is 0 and it equals the abs-error
+> sum, it is a magnitude column whatever the schema says.
 
 ### 5.5 Quality and context
 
