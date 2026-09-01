@@ -273,7 +273,7 @@ result, not a bug.
 ## Packaging for upload
 
 ```bash
-./scripts/package.sh        # → dist/tg-planning-plugin-<version>.zip
+./scripts/package.sh        # → dist/tg-claude-connector-plugin-<version>.zip
 ```
 
 **The plugin root must be the archive root.** `.claude-plugin/plugin.json` has to

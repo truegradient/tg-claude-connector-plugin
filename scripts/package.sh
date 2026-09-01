@@ -9,7 +9,7 @@
 # plugin: it wraps everything in <repo>-<branch>/. Ship the artifact this script
 # builds as a release asset instead.
 #
-#   ./scripts/package.sh            → dist/tg-planning-plugin-<version>.zip
+#   ./scripts/package.sh            → dist/tg-claude-connector-plugin-<version>.zip
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,7 +19,7 @@ command -v zip >/dev/null || { echo "zip not found" >&2; exit 1; }
   echo "verify-plugin.sh failed — not packaging. Run it to see why." >&2; exit 1; }
 
 version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | /usr/bin/head -1)
-out="dist/tg-planning-plugin-${version}.zip"
+out="dist/tg-claude-connector-plugin-${version}.zip"
 mkdir -p dist
 rm -f "$out"
 
