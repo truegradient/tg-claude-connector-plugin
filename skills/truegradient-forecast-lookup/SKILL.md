@@ -100,7 +100,12 @@ the range**. When it is not:
   operational forecast, which means the plan sits outside what the model
   considered likely;
 - name the families, and show `ML Forecast` alongside if it exists — the interval
-  will usually contain *that*.
+  contains *that*. Verified on 12 live rows: every `ML Forecast` sat inside its
+  Lower/Upper Bound, while `Forecast` sat **exactly at the Upper Bound** on 5 of
+  them and above it on 2. That pattern — an edited forecast pinned to or pushed
+  past the model's ceiling — is worth stating when you see it, because it says the
+  plan is at the optimistic edge of the model's range rather than in the middle of
+  it.
 
 Never widen, clip or recentre the interval to make it contain the point, and never
 present the band as the uncertainty around an edited forecast.

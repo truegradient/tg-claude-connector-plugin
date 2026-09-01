@@ -150,6 +150,31 @@ reading the docs would have caught.
   the lock extended 12 months past the last actual — so the measurable window is
   the intersection, 10 months of 24.
 
+### Corrected on retest
+
+The fixes above were re-run against the live workspace. Two of them were wrong.
+
+- **`current_month_sales_tilldate` is a placeholder here, and the first fix would
+  have published a zero as fact.** The column is present and non-null on all 2,379
+  rows and sums to **exactly 0**. The guidance said to use it as the month-to-date
+  actual; it now requires summing the column first and, when the total is 0,
+  saying the current month is not measurable rather than reporting the zero. The
+  same caution is noted for `Current Month Sales till Date` in `DOI Details`.
+- **The `min`/`max` warning was scoped far too narrowly.** It was written as a
+  quirk of the stored metric columns. It affects **every numeric column, `Sales`
+  included**: `max("2026-07-31 Sales")` returned `"9.0"` on a column that sums to
+  6,364 and whose individual rows reach 41, and `min(overall_accuracy)` returned
+  `"-1.59"` when `sort_by` proves the true minimum is **−750.0**. Both answers
+  look plausible and neither errors. `TOOL-GUIDE.md` now carries the measured
+  comparison table and names the verified alternatives — `sort_by` plus `limit`
+  for extremes, `sum`/`avg` for aggregates, both confirmed numeric on the same
+  data.
+
+One fix was confirmed and strengthened: every `ML Forecast` on 12 sampled rows sat
+inside its Lower/Upper Bound, while `Forecast` sat exactly **at** the Upper Bound
+on 5 of them and above it on 2 — an edited plan pinned to or past the model's
+ceiling, which the lookup skill now says out loud.
+
 ### Confirmed correct by the same testing
 
 - **Negative accuracy is real, not hypothetical.** The workspace's own stored

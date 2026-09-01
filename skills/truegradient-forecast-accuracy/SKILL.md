@@ -166,14 +166,24 @@ columns — `current_month_sales_tilldate` in `Final DA Data`, and
 So before reporting a partial month:
 
 ```
-if a "<current month> Sales" column exists      -> use it, labelled partial
-elif current_month_sales_tilldate exists        -> use it, and say the figure is
-                                                   month-to-date from a non-dated
-                                                   column with no matching
-                                                   forecast column to pair it with
-else                                            -> say the current month is not
-                                                   measurable in this dataset
+if a "<current month> Sales" column exists:
+    use it, labelled partial
+
+elif current_month_sales_tilldate exists AND its sum > 0:
+    use it, and say the figure is month-to-date from a non-dated column with
+    no matching forecast column to pair it against
+
+else:
+    say the current month is not measurable in this dataset
 ```
+
+**Check that the column is populated — do not trust its presence.** Measured live,
+`current_month_sales_tilldate` was present and non-null on all 2,379 rows and
+summed to **exactly 0**. Reporting it as the month-to-date actual would have
+published a zero as fact. `sum` it first; if the total is 0, the column is a
+placeholder in this workspace and the current month is simply not measurable —
+say that rather than printing the zero. The same caution applies to
+`Current Month Sales till Date` in `DOI Details`.
 
 A month-to-date total with **no forecast column for that month** cannot yield an
 accuracy figure at all — report the actual and say that plainly. And check the

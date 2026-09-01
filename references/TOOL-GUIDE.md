@@ -195,14 +195,34 @@ paginated read.
 **Aggregation functions that work:** `count` `sum` `avg` `min` `max`
 `count_distinct` `median` `percentile` `stddev` `variance` `string_agg`
 
-**`min` and `max` are unsafe on the stored metric columns.** Those columns come
-back as strings, and `min`/`max` compare them as text, not numbers. Observed live
-on `overall_accuracy` within the Critical zone: `min` returned `"-1.59"` and `max`
-returned `"9.3"` while `avg` returned `-13.21` — impossible numerically, because
-`"-1.59" < "-133.33"` lexicographically. `avg` and `sum` return proper numbers.
-So: never use `min`/`max` to find a best or worst stored accuracy, bias or
-contribution. Sort with `sort_by` and read the end rows, or pull the values and
-compare them yourself after casting.
+### `min` and `max` are lexicographic — do not use them on numbers
+
+**This is not limited to the stored metric columns. It affects every numeric
+column, `Sales` included.** The engine returns these values as strings and
+`min`/`max` compare them as text.
+
+Measured live on a 2,379-row `Final DA Data`:
+
+| Call | Returned | Truth |
+|---|---|---|
+| `min(overall_accuracy)` | `"-1.59"` | **−750.0** |
+| `max(overall_accuracy)` | `"9.68"` | 89.41 |
+| `max(2026-07-31 Sales)` | `"9.0"` | ≥ 41.0 — that column sums to 6,364 |
+
+`"9.0" > "41.0"` as text, and `"-1.59" < "-750.0"` as text, so both answers are
+plausible-looking and wrong. Nothing errors. A "worst SKU" or "largest seller"
+built on `min`/`max` is simply a different question than the one asked.
+
+**What to use instead** — both verified numeric on the same data:
+
+- `sort_by` on the column plus `limit` — returned −750.0, −630.0, −625.0, −600.0
+  ascending, which is correct.
+- `avg` and `sum` — `avg(overall_accuracy)` returned 1.4738 against an
+  independently computed 1.47, and `sum` reconciled exactly.
+
+So: rank with `sort_by` and read the end rows; aggregate with `sum`/`avg`; and if
+you need a true extreme, fetch the values and compare them yourself after casting
+to a number. Never report a `min`/`max` result as a highest or lowest value.
 
 **Aggregation functions that are broken — never send:** `wmape` `accuracy`
 `bias` `mape` `mae` `rmse` `sum_columns`. They validate but lose the
