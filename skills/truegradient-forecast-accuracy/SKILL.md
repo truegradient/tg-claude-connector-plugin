@@ -57,8 +57,19 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 ## Procedure
 
 **1–3. Identify, pick, discover.**
-`tg_whoami` → `tg_list_experiments_for_analysis(module="demand-planning")` →
-`tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+
+**Do not filter the roster by `module="demand-planning"`.** Forecast data does not
+only live in demand-planning experiments: in an IBP workspace every experiment is
+`inventory-optimization`, and `Final DA Data` — Sales, the lock families, the
+stored accuracy and bias columns — sits inside those. Filtering on
+demand-planning there returns `count: 0` and the skill would report no data while
+the data is present.
+
+Call the roster **unfiltered** and pick by what the experiment actually holds.
+If you do pass a module and get `count: 0`, read
+`diagnostics.distinct_modules_seen` before concluding anything, and retry
+unfiltered.
 
 **4. Build the eligible set — the step that determines everything.**
 
@@ -143,6 +154,32 @@ column's place, same formulas, current month still held out of the pooled figure
   figure, but only after saying that.
 
 Full detail: `../../references/METRICS.md` §1a.
+
+**4c. Where the current month's actuals actually live.**
+
+Step 4a assumes a dated column for the current month. Often there is none:
+observed live, `Sales` ran 2024-08-31 to 2026-07-31 with no column for either the
+current month or the one before it, while month-to-date sat in two **non-dated**
+columns — `current_month_sales_tilldate` in `Final DA Data`, and
+`Current Month Sales till Date` in `DOI Details`.
+
+So before reporting a partial month:
+
+```
+if a "<current month> Sales" column exists      -> use it, labelled partial
+elif current_month_sales_tilldate exists        -> use it, and say the figure is
+                                                   month-to-date from a non-dated
+                                                   column with no matching
+                                                   forecast column to pair it with
+else                                            -> say the current month is not
+                                                   measurable in this dataset
+```
+
+A month-to-date total with **no forecast column for that month** cannot yield an
+accuracy figure at all — report the actual and say that plainly. And check the
+gap between the last `Sales` month and today: if actuals stop two months back,
+the answer's real limitation is data age, not the current-month rule. Report the
+experiment's `createdAt` next to it.
 
 **5. Check for precomputed columns first.**
 If `overall_accuracy` or `rolling_accuracy` exist in the live column list, prefer

@@ -33,7 +33,19 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 `tg_whoami` → note `company_name`. Not authenticated? Stop.
 
 **2. Pick the experiment.**
-`tg_list_experiments_for_analysis(module="demand-planning")`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+
+**Do not filter the roster by `module="demand-planning"`.** Forecast data does not
+only live in demand-planning experiments: in an IBP workspace every experiment is
+`inventory-optimization`, and `Final DA Data` — Sales, the lock families, the
+stored accuracy and bias columns — sits inside those. Filtering on
+demand-planning there returns `count: 0` and the skill would report no data while
+the data is present.
+
+Call the roster **unfiltered** and pick by what the experiment actually holds.
+If you do pass a module and get `count: 0`, read
+`diagnostics.distinct_modules_seen` before concluding anything, and retry
+unfiltered.
 Default to the newest. If the user names a cycle or month, match it against
 `label` and `createdAt`. If `count: 0`, show the diagnostics and stop.
 
@@ -70,6 +82,28 @@ discriminator: `contains "Lock"` matches `Locked` too. See
 `../../references/LOCK-FAMILIES.md`. If `Forecast` has no column for the requested month, say
 which families do cover it and use the closest match the user would want —
 naming it.
+
+**5b. The interval may not contain the forecast — say so when it does not.**
+
+`Lower Bound` / `Upper Bound` / `P10`–`P99` are the **model's** interval. `Forecast`
+is the operational number and may have been edited by a planner, so the point can
+sit outside its own band. Observed live: a SKU with `2026-09-30 Forecast` of 101
+against a Lower/Upper Bound of 38–70, and in that workspace `Forecast` was
+identical to `Table Edited Forecast` for every row — the edits moved the point off
+the model's distribution.
+
+So before printing a point and a range together, **check that the point is inside
+the range**. When it is not:
+
+- print both anyway — suppressing either one hides the disagreement;
+- say plainly that the interval is the model's and does not contain the
+  operational forecast, which means the plan sits outside what the model
+  considered likely;
+- name the families, and show `ML Forecast` alongside if it exists — the interval
+  will usually contain *that*.
+
+Never widen, clip or recentre the interval to make it contain the point, and never
+present the band as the uncertainty around an edited forecast.
 
 **6. Read the data.**
 Always filtered and projected — never a plain read.

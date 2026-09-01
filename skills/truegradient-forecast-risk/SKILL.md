@@ -99,8 +99,19 @@ Full detail: `../../references/SAFETY-CONTRACT.md`
 ## Procedure
 
 **1–3. Identify, pick, discover.**
-`tg_whoami` → `tg_list_experiments_for_analysis(module="demand-planning")` →
-`tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+
+**Do not filter the roster by `module="demand-planning"`.** Forecast data does not
+only live in demand-planning experiments: in an IBP workspace every experiment is
+`inventory-optimization`, and `Final DA Data` — Sales, the lock families, the
+stored accuracy and bias columns — sits inside those. Filtering on
+demand-planning there returns `count: 0` and the skill would report no data while
+the data is present.
+
+Call the roster **unfiltered** and pick by what the experiment actually holds.
+If you do pass a module and get `count: 0`, read
+`diagnostics.distinct_modules_seen` before concluding anything, and retry
+unfiltered.
 
 **4. Decide the ranking grain.**
 Match what the user asked: SKU/variant level for planner worklists, category or
@@ -225,6 +236,11 @@ worst zone are where a planner starts.
 Show against every row: stored accuracy, stored bias, contribution.
 ```
 
+`trust_zone` also carries **`"Not Available"`** in live data — observed on 34 items
+holding 0% of volume. Treat it exactly like a blank: it is the workspace saying it
+has not classified the item, so it goes in the unclassified list at step 10, never
+into a zone and never into the ranking.
+
 The severity **order** of these labels is documented; the **thresholds** behind
 them are not readable. Ordering the workspace's own labels is not a threshold
 judgement — assigning one to an item would be. If a label appears that is not in
@@ -318,8 +334,8 @@ ascending instead and say that trivial items may appear high.
 
 **10. Separate the unmeasurable.**
 Two lists, both kept out of the ranking:
-- items whose `trust_zone` is null or blank — the workspace has not classified
-  them, and neither may you;
+- items whose `trust_zone` is null, blank, or `"Not Available"` — the workspace has
+  not classified them, and neither may you;
 - items with no stored accuracy and fewer than 3 eligible months to compute one,
   with their month count.
 

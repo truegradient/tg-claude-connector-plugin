@@ -107,6 +107,17 @@ a forecast approval or sign-off. Do not treat it as one.
 **When:** always, before any read. `columns` is the **authoritative vocabulary** —
 the only column names you may use anywhere.
 
+**Do not filter the roster by module for forecast questions.** `module` filters on
+the experiment's own label, and forecast data is not confined to
+`demand-planning`: an IBP workspace labels every experiment
+`inventory-optimization` and keeps `Final DA Data` inside those. Observed live:
+`module="demand-planning"` returned `count: 0` with
+`diagnostics.distinct_modules_seen: {"inventory-optimization": 18}`, while the
+same workspace's `Final DA Data` carried 419 columns of Sales, lock families and
+stored accuracy. Call the roster unfiltered and route on the datasets an
+experiment actually resolves. A `count: 0` with a non-empty `raw_count` means the
+filter dropped everything — read `dropped_by` before reporting no data.
+
 The tool accepts multiple ids and resolves them in one backend fetch, but the
 skills work on **one experiment at a time**: prior-cycle experiments are usually
 absent from the live roster, so cross-cycle comparison is not supported. If you
@@ -183,6 +194,15 @@ paginated read.
 
 **Aggregation functions that work:** `count` `sum` `avg` `min` `max`
 `count_distinct` `median` `percentile` `stddev` `variance` `string_agg`
+
+**`min` and `max` are unsafe on the stored metric columns.** Those columns come
+back as strings, and `min`/`max` compare them as text, not numbers. Observed live
+on `overall_accuracy` within the Critical zone: `min` returned `"-1.59"` and `max`
+returned `"9.3"` while `avg` returned `-13.21` — impossible numerically, because
+`"-1.59" < "-133.33"` lexicographically. `avg` and `sum` return proper numbers.
+So: never use `min`/`max` to find a best or worst stored accuracy, bias or
+contribution. Sort with `sort_by` and read the end rows, or pull the values and
+compare them yourself after casting.
 
 **Aggregation functions that are broken — never send:** `wmape` `accuracy`
 `bias` `mape` `mae` `rmse` `sum_columns`. They validate but lose the
@@ -276,7 +296,7 @@ check for an `error` key before using a result.
 1. tg_whoami
    → company_name "Acme Foods"
 
-2. tg_list_experiments_for_analysis(module="demand-planning")
+2. tg_list_experiments_for_analysis()          # unfiltered — see below
    → experiments[0] = {id: "exp_912", label: "Aug 2026 cycle",
                        createdAt: "2026-08-01", experimentStatus: "Completed"}
    → used_archived_fallback: false          ✓ live data

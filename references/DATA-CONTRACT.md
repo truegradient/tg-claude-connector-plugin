@@ -208,12 +208,30 @@ compute from sums and say the figure was derived.
 `trust_zone` may be **quoted with attribution** but never derived. See
 `SAFETY-CONTRACT.md` §15.
 
-### 5.7 Families documented but often absent
+### 5.7 Families that vary by workspace — always detect
 
-`<date> Consensus Forecast`, `Deviation_*`, `Risk_*`, `SKU Code`, `Site ID`.
+**Present in one live workspace, absent in another. Detect, never assume.**
 
-TrueGradient's internal dataset documentation mentions these, but they were not
-present in an observed real workspace export. **Never assume they exist.**
+Observed present in a live IBP workspace (`Final DA Data`, 419 columns):
+`SKU Code`, `Site ID`, `Risk_Locked_Lag_1_<date>` (10 of them),
+`<date> Deviation Locked Lag_N`, `overall_accuracy`, `rolling_accuracy`,
+`trust_zone`, `% Contribution Last 3 Months`, `<date> Accuracy`, `<date> Bias`,
+`AB_Class`, `cluster`, `Lifestage`, `SnOP Comments`, `Imputation Flag`.
+
+Observed **absent** in that same workspace, so never assume them either:
+`<date> Consensus Forecast`, any secondary `Lock ...` family, any
+`Multi_Lock ...` family, and `<date> Forecast Abs Error` — the only abs-error
+family present was the lock's own.
+
+Two shapes worth knowing:
+
+- **The lag is not fixed.** That workspace's only lock family was
+  `Locked ML Forecast Lag_1`. Examples in this plugin write `Lag_4`; read the lag
+  from the live column list and name whichever one you used.
+- **The lock can extend past the actuals.** `Locked ML Forecast Lag_1` covered
+  2025-10-31 to 2027-07-31 (22 months) while `Sales` covered 2024-08-31 to
+  2026-07-31 (24 months). The measurable window is the **intersection** — 10
+  months — and the lock's future months are forecast, not measurement.
 
 ---
 

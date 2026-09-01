@@ -111,6 +111,65 @@ adds first-class handling for `Consensus Forecast`.
 - `COLUMN-DISCOVERY.md`'s optional-column table now carries a `Consensus Forecast`
   row.
 
+### Fixed after live testing against a real workspace
+
+All five skills were run end to end against a live connector (company `demo`,
+2,379-row `Final DA Data`, 419 columns). Six defects surfaced that no amount of
+reading the docs would have caught.
+
+- **The roster filter returned nothing.** All four forecast skills called
+  `tg_list_experiments_for_analysis(module="demand-planning")`. In an IBP
+  workspace every experiment is labelled `inventory-optimization` and
+  `Final DA Data` lives inside those, so the filter returned `count: 0` with
+  `distinct_modules_seen: {"inventory-optimization": 18}` — the skills would have
+  reported no data while 419 columns of it sat there. The roster is now called
+  unfiltered and routing is by the datasets an experiment resolves.
+- **`min` and `max` are lexicographic on the stored metric columns.** They come
+  back as strings. Observed on `overall_accuracy` within the Critical zone: `min`
+  gave `"-1.59"` and `max` gave `"9.3"` while `avg` gave `-13.21`, which is
+  numerically impossible — `"-1.59" < "-133.33"` as text. `TOOL-GUIDE.md` now
+  warns that `min`/`max` cannot be used to find a best or worst stored figure.
+- **A forecast can sit outside its own interval.** Observed a SKU with
+  `2026-09-30 Forecast` of 101 against Lower/Upper Bound of 38–70, because the
+  bounds are the model's while `Forecast` was identical to
+  `Table Edited Forecast` for every row. The lookup skill now checks containment
+  and, when the point falls outside, prints both and says the interval is the
+  model's and does not cover the operational plan — never widening or clipping it.
+- **`trust_zone` carries `"Not Available"`**, a value not in the documented
+  severity list, on 34 items. Treated as unclassified, like a blank.
+- **The current month may have no dated `Sales` column at all.** `Sales` ran to
+  2026-07-31 with nothing for the current month or the one before; month-to-date
+  lived in the non-dated `current_month_sales_tilldate`. The accuracy skill now
+  looks there, and reports the actual without an accuracy figure when no forecast
+  column exists for that month — plus flags data age when actuals stop months back.
+- **`DATA-CONTRACT.md` §5.7 was inverted.** It listed `Risk_*`, `SKU Code` and
+  `Site ID` as "documented but often absent"; all three are present live. What is
+  actually absent there is `Consensus Forecast`, every secondary `Lock ...` and
+  `Multi_Lock ...` family, and `Forecast Abs Error`. The section now records both
+  lists, that the lag was `Lag_1` and not the `Lag_4` of the examples, and that
+  the lock extended 12 months past the last actual — so the measurable window is
+  the intersection, 10 months of 24.
+
+### Confirmed correct by the same testing
+
+- **Negative accuracy is real, not hypothetical.** The workspace's own stored
+  `overall_accuracy` averages **−13.21** across the Critical zone — 1,622 of 2,379
+  items, 47.2% of volume — and `rolling_accuracy` averages **−37.85**. Under the
+  old `min(100, …)` floor those would all have read 0 or been dropped. This is the
+  clearest vindication of the formula correction above.
+- **The row-level `Abs Error` numerator matters enormously.** Over the 10 eligible
+  months: WMAPE 47,693 / 64,781 = 73.62%, accuracy **26.38%**. The netted fallback
+  `|Σactual − Σforecast|` gives 14,149 and would have reported **78.16%** — a
+  51.78-point overstatement. The preference for the stored abs-error column, and
+  the requirement to disclose the fallback, are both load-bearing.
+- **The no-plain-average rule is worth 12 points.** Simple `avg()` of the stored
+  accuracy gives 1.47%; volume-weighted gives 13.87%.
+- **`% Contribution Last 3 Months` summed to exactly 100.00%**, so it can be used
+  directly as volume share.
+- Supply routing worked: `Stock_Risk_Level` split into ExcessStock (1,510 SKUs,
+  $152.2K excess), Stable (382), LowInventory (314, $7.7K sales loss), StockOut
+  (126, $16.9K), CriticalStock (47, $12.8K) — matching `SUPPLY-DATA-CONTRACT.md`.
+
 ### Repo
 
 - `scripts/verify-plugin.sh` — pre-push checks that fail on the things that break

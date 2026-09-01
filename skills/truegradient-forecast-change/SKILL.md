@@ -89,8 +89,19 @@ change — that is a horizon effect. See `../../references/LOCK-FAMILIES.md`.
 ## Procedure
 
 **1–3. Identify, pick, discover.**
-`tg_whoami` → `tg_list_experiments_for_analysis(module="demand-planning")` →
-`tg_resolve_datasets(experiment_ids=["<id>"])`.
+`tg_whoami` → `tg_list_experiments_for_analysis()` → `tg_resolve_datasets(experiment_ids=["<id>"])`.
+
+**Do not filter the roster by `module="demand-planning"`.** Forecast data does not
+only live in demand-planning experiments: in an IBP workspace every experiment is
+`inventory-optimization`, and `Final DA Data` — Sales, the lock families, the
+stored accuracy and bias columns — sits inside those. Filtering on
+demand-planning there returns `count: 0` and the skill would report no data while
+the data is present.
+
+Call the roster **unfiltered** and pick by what the experiment actually holds.
+If you do pass a module and get `count: 0`, read
+`diagnostics.distinct_modules_seen` before concluding anything, and retry
+unfiltered.
 
 **4. Pick the two families and confirm overlap.** Per the checks above. If the
 comparison is not valid, say why and propose the nearest valid one — do not
