@@ -1,23 +1,22 @@
 # Changelog
 
-## 1.0.0 — 2026-09-04
+## 1.0.1 — 2026-09-04
 
-First release from this repository, and the first with a tagged git history.
+Licensing and packaging for the public Claude plugin directory listing. **No
+skill, reference or metric changes** — the five `SKILL.md` files and all eight
+`references/*.md` are byte-identical to 1.0.0, so every number the plugin
+produces is unchanged.
 
-The plugin existed before this point as a series of uploaded archives; that
-iteration is kept below under **Pre-repository history** for the reasoning it
-records, but those numbers were never tagged and no code for them lives here.
-Versioning starts fresh at 1.0.0.
+1.0.1 exists rather than folding this into 1.0.0 because 1.0.0 was already
+distributed as an archive outside TrueGradient. Reusing the number would leave
+two different artefacts claiming to be the same release, and update checks key
+on the version string: a holder of the old 1.0.0 would never be told anything
+newer existed. The bump is what makes the older copy resolvable.
 
-This release corrects the accuracy formula, makes the risk skill read the metrics
-the workspace already stores rather than recomputing them, drops cross-cycle
-comparison — which depended on data the live roster usually does not carry — and
-adds first-class handling for `Consensus Forecast`.
-
-It is also the release submitted to the public Claude plugin directory, and the
-section below covers what that required. Those changes are packaging and
-licensing only: they do not touch a skill, a reference or a metric, so no number
-the plugin produces is affected by them.
+**Anyone still on 1.0.0 should upgrade for the licence, not for behaviour.**
+Their copy carries the original notice, which granted no rights at all; 1.0.1 is
+the first build a recipient is actually licensed to use. Analytically the two
+are the same plugin.
 
 ### Prepared for the public plugin directory
 
@@ -25,11 +24,13 @@ the plugin produces is affected by them.
   all-rights-reserved with no grant at all: "No licence to use, copy, modify,
   merge, publish, distribute, sublicense or sell copies is granted." That is
   incompatible with a public directory listing, which is an open invitation to
-  install. The plugin stays proprietary — no modification, no redistribution, no
-  trademark licence — but now carries an explicit, revocable grant to download,
-  install and use it as distributed. The notice also names the legal entity
-  (TrueGradient Artificial Intelligence Private Limited) and separates this
-  plugin's terms from the terms governing the TrueGradient service itself.
+  install — and it left even direct recipients without a right to use what they
+  had been sent. The plugin stays proprietary — no modification, no
+  redistribution, no trademark licence — but now carries an explicit, revocable
+  grant to download, install and use it as distributed. The notice also names
+  the legal entity (TrueGradient Artificial Intelligence Private Limited) and
+  separates this plugin's terms from the terms governing the TrueGradient
+  service itself.
 - **`license` is `LicenseRef-TrueGradient-Proprietary`, not `UNLICENSED`.**
   `UNLICENSED` is an npm convention, not an SPDX identifier, and it reads to a
   reviewer as "you may not use this". `LicenseRef-` is the SPDX-conformant way
@@ -53,6 +54,20 @@ the plugin produces is affected by them.
   validate` when the CLI is available, and asserts that `LICENSE` still grants
   installation — a guard against the notice being reverted to a form that cannot
   legally be listed.
+
+## 1.0.0 — 2026-09-01
+
+First release from this repository, and the first with a tagged git history.
+
+The plugin existed before this point as a series of uploaded archives; that
+iteration is kept below under **Pre-repository history** for the reasoning it
+records, but those numbers were never tagged and no code for them lives here.
+Versioning starts fresh at 1.0.0.
+
+This release corrects the accuracy formula, makes the risk skill read the metrics
+the workspace already stores rather than recomputing them, drops cross-cycle
+comparison — which depended on data the live roster usually does not carry — and
+adds first-class handling for `Consensus Forecast`.
 
 ### Removed
 

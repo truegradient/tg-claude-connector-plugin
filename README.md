@@ -4,7 +4,7 @@ Five skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.0.0
+Version 1.0.1
 
 ---
 

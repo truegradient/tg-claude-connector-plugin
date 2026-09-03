@@ -12,7 +12,7 @@
       "name": "truegradient-forecast-plugin",
       "displayName": "TrueGradient Planning Analysis",
       "source": "./",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "TrueGradient Planning Analysis — five skills that make Claude answer demand, supply and inventory questions from final, approved TrueGradient data only: forecast lookup with uncertainty intervals, accuracy and bias measurement, forecast-risk ranking, forecast-family change comparison, and supply/inventory analysis covering stock position, coverage, stockout timing, reorder plans and excess. Requires the TrueGradient AI connector.",
       "author": {
         "name": "TrueGradient AI",
