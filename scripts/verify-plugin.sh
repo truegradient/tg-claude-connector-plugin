@@ -15,10 +15,15 @@ sect "Versioning"
 pv=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' .claude-plugin/plugin.json | head -1)
 rv=$(sed -n 's/^Version \(.*\)$/\1/p' README.md | head -1)
 cv=$(sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' CHANGELOG.md | head -1)
+mv=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' .claude-plugin/marketplace.json | head -1)
 [ -n "$pv" ] && ok "plugin.json      $pv" || bad "plugin.json has no version"
 [ "$rv" = "$pv" ] && ok "README.md        $rv" || bad "README says '$rv', plugin.json says '$pv'"
 [ "$cv" = "$pv" ] && ok "CHANGELOG.md     $cv (newest entry)" \
                   || bad "newest CHANGELOG entry is '$cv', plugin.json says '$pv'"
+# The marketplace entry pins the version users receive: if it lags plugin.json,
+# the directory keeps serving the old plugin however often the repo is updated.
+[ "$mv" = "$pv" ] && ok "marketplace.json $mv (entry pin)" \
+                  || bad "marketplace.json pins '$mv', plugin.json says '$pv'"
 if printf '%s' "$pv" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   ok "semver shape"
 else
@@ -27,10 +32,36 @@ fi
 
 sect "Manifest"
 if command -v python3 >/dev/null 2>&1; then
-  python3 -c 'import json,sys; json.load(open(".claude-plugin/plugin.json"))' 2>/dev/null \
-    && ok "plugin.json is valid JSON" || bad "plugin.json is not valid JSON"
-  python3 -c 'import json,sys; json.load(open(".mcp.json"))' 2>/dev/null \
-    && ok ".mcp.json is valid JSON" || bad ".mcp.json is not valid JSON"
+  for j in .claude-plugin/plugin.json .claude-plugin/marketplace.json .mcp.json; do
+    python3 -c "import json,sys; json.load(open('$j'))" 2>/dev/null \
+      && ok "$j is valid JSON" || bad "$j is not valid JSON"
+  done
+
+  # The directory listing renders the marketplace entry, Claude Code renders
+  # plugin.json. If they disagree, users read one thing and install another.
+  drift=$(python3 - <<'PY'
+import json
+p = json.load(open(".claude-plugin/plugin.json"))
+m = json.load(open(".claude-plugin/marketplace.json"))
+entry = next((e for e in m["plugins"] if e.get("name") == p.get("name")), None)
+if entry is None:
+    print("no marketplace entry named '%s'" % p.get("name"))
+else:
+    for k in ("displayName", "description", "license", "homepage",
+              "repository", "author", "keywords"):
+        if p.get(k) != entry.get(k):
+            print("%s differs between plugin.json and the marketplace entry" % k)
+PY
+)
+  [ -z "$drift" ] && ok "plugin.json and marketplace entry agree" \
+                  || bad "$drift"
+fi
+
+# Catches the things the CLI knows about and this script does not — bad
+# component paths, unrecognised keys, malformed agent frontmatter.
+if command -v claude >/dev/null 2>&1; then
+  claude plugin validate . >/dev/null 2>&1 \
+    && ok "claude plugin validate" || bad "claude plugin validate failed — run it to see why"
 fi
 
 sect "Skill frontmatter"
@@ -74,6 +105,13 @@ grep -rq 'Mode B' skills 2>/dev/null \
 sect "Repo hygiene"
 [ -f .gitignore ] && ok ".gitignore present" || bad ".gitignore missing"
 [ -f LICENSE ]    && ok "LICENSE present"    || bad "LICENSE missing"
+[ -f .claude-plugin/marketplace.json ] && ok "marketplace.json present" \
+                                       || bad "marketplace.json missing — nothing to list"
+# A directory listing is a public invitation to install. A proprietary notice
+# that grants no rights at all contradicts it, and reviewers do read this file.
+grep -q 'licence to download, install and use' LICENSE \
+  && ok "LICENSE grants installation" \
+  || bad "LICENSE no longer grants installation — it cannot be listed publicly"
 if [ -d .git ] && git ls-files --error-unmatch .claude/settings.local.json >/dev/null 2>&1; then
   bad ".claude/settings.local.json is tracked — it disables the MCP server for clones"
 else

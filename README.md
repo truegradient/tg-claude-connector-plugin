@@ -4,7 +4,7 @@ Five skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.0.0
+Version 1.0.1
 
 ---
 
@@ -56,7 +56,44 @@ which dataset and which measures produced the number.
 
 ---
 
+## Installing
+
+Whichever route you take, **step 2 — the connector — is not optional.** The
+plugin is instructions only; without the connector Claude has no TrueGradient
+tools and the skills will refuse to produce numbers.
+
+### From the Claude plugin directory
+
+Once the listing is live, the plugin is available to every Claude and Claude Code
+user with no marketplace setup:
+
+```
+/plugin install truegradient-forecast-plugin
+```
+
+### From this repository — works today
+
+Anyone can install straight from the public repo, listed or not. This repo is its
+own marketplace: `.claude-plugin/marketplace.json` sits beside the manifest.
+
+```
+/plugin marketplace add truegradient/tg-claude-connector-plugin
+/plugin install truegradient-forecast-plugin@truegradient
+```
+
+Updates arrive with `/plugin marketplace update truegradient`.
+
+### Then connect the data
+
+**Settings → Connectors → TrueGradient AI → Connect**, or add a custom connector
+pointed at `https://mcp-server.truegradient.ai/mcp`. Sign in with Google, choose
+your company, then check it with **"Who am I in TrueGradient?"**
+
+---
+
 ## For the organization admin
+
+Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 
 ### 1. Upload the plugin
 
@@ -103,7 +140,7 @@ to produce numbers) if the tools are absent.
 
 ### Install and connect
 
-1. **Settings → Plugins** → find **TrueGradient Forecast Analysis** → Install
+1. **Settings → Plugins** → find **TrueGradient Planning Analysis** → Install
    *(skip if your admin installed it by default)*
 2. **Settings → Connectors** → **TrueGradient AI** → **Connect**
 3. Sign in with Google and choose your company
@@ -302,14 +339,22 @@ excluded.
 
 ## Releasing
 
-The version of record is `version` in `.claude-plugin/plugin.json`. Three places
+The version of record is `version` in `.claude-plugin/plugin.json`. Four places
 must agree, and `scripts/verify-plugin.sh` fails the push if they drift:
 
 | Where | What it must say |
 |---|---|
 | `.claude-plugin/plugin.json` | `"version": "X.Y.Z"` |
+| `.claude-plugin/marketplace.json` | the entry's `"version": "X.Y.Z"` |
 | `README.md` | the `Version X.Y.Z` line near the top |
 | `CHANGELOG.md` | newest `## X.Y.Z — YYYY-MM-DD` heading |
+
+The marketplace entry's `version` **pins** what installers receive. Leave it
+behind and the directory keeps serving the old plugin no matter how many times
+the repo is updated — which is why it is a verified check rather than a habit.
+`verify-plugin.sh` also asserts that the two manifests agree on display name,
+description, licence, links and keywords, since the directory renders one of
+them and Claude Code renders the other.
 
 Semver, read for a plugin made of prompts rather than code:
 
@@ -337,10 +382,11 @@ workspace. Any test marked **Fail (critical)** blocks promotion.
 ## Contents
 
 ```
-.claude-plugin/plugin.json     manifest — the version of record
+.claude-plugin/plugin.json      manifest — the version of record
+.claude-plugin/marketplace.json listing entry; makes this repo its own marketplace
 .mcp.json                      connector declaration (best-effort)
 .gitignore                     excludes .claude/settings.local.json and archives
-LICENSE                        proprietary notice
+LICENSE                        proprietary; grants installation and use
 README.md                      this file
 CHANGELOG.md
 TEST-CHECKLIST.md              55 acceptance tests (10 groups)
