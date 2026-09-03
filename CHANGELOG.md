@@ -1,53 +1,6 @@
 # Changelog
 
-## 1.0.1 — 2026-09-04
-
-Prepares the repository for a public Claude plugin directory listing. No skill,
-reference or metric behaviour changes — every number the plugin produces at
-1.0.1 is the number it produced at 1.0.0.
-
-### Changed
-
-- **`LICENSE` now grants installation.** The previous notice was
-  all-rights-reserved with no grant at all: "No licence to use, copy, modify,
-  merge, publish, distribute, sublicense or sell copies is granted." That is
-  incompatible with a public directory listing, which is an open invitation to
-  install. The plugin stays proprietary — no modification, no redistribution, no
-  trademark licence — but now carries an explicit, revocable grant to download,
-  install and use it as distributed. The notice also names the legal entity
-  (TrueGradient Artificial Intelligence Private Limited) and separates this
-  plugin's terms from the terms governing the TrueGradient service itself.
-- **`license` is now `LicenseRef-TrueGradient-Proprietary`, not `UNLICENSED`.**
-  `UNLICENSED` is an npm convention, not an SPDX identifier, and it reads to a
-  reviewer as "you may not use this". `LicenseRef-` is the SPDX-conformant way
-  to name a licence that is not on the SPDX list.
-
-### Added
-
-- **`displayName: "TrueGradient Planning Analysis"`** in both manifests. Without
-  it the directory falls back to the kebab-case `truegradient-forecast-plugin`,
-  which reads as forecast-only and undersells the supply and inventory skill.
-  The README's stale "TrueGradient Forecast Analysis" is corrected to match.
-- **`repository` in `plugin.json`**, and `$schema` for editor validation.
-- **A `version` pin on the marketplace entry.** Once listed, CI mirrors repo
-  pushes automatically; the entry's version is what installers actually receive.
-- **Install instructions in the README** for the directory and for
-  `/plugin marketplace add truegradient/tg-claude-connector-plugin`, which works
-  today without waiting on the listing. The archive-upload route is kept and
-  labelled as the org-wide alternative rather than the only path.
-
-### Verification
-
-- `verify-plugin.sh` now checks `marketplace.json` — that it exists, is valid
-  JSON, pins the same version as `plugin.json`, and agrees with it on display
-  name, description, licence, homepage, repository, author and keywords. The two
-  manifests are rendered in different places, so drift between them shows users
-  one thing and installs another.
-- It also shells out to `claude plugin validate` when the CLI is available, and
-  asserts that `LICENSE` still grants installation — a guard against the notice
-  being reverted to a form that cannot legally be listed.
-
-## 1.0.0 — 2026-09-01
+## 1.0.0 — 2026-09-04
 
 First release from this repository, and the first with a tagged git history.
 
@@ -60,6 +13,46 @@ This release corrects the accuracy formula, makes the risk skill read the metric
 the workspace already stores rather than recomputing them, drops cross-cycle
 comparison — which depended on data the live roster usually does not carry — and
 adds first-class handling for `Consensus Forecast`.
+
+It is also the release submitted to the public Claude plugin directory, and the
+section below covers what that required. Those changes are packaging and
+licensing only: they do not touch a skill, a reference or a metric, so no number
+the plugin produces is affected by them.
+
+### Prepared for the public plugin directory
+
+- **`LICENSE` now grants installation.** The notice was previously
+  all-rights-reserved with no grant at all: "No licence to use, copy, modify,
+  merge, publish, distribute, sublicense or sell copies is granted." That is
+  incompatible with a public directory listing, which is an open invitation to
+  install. The plugin stays proprietary — no modification, no redistribution, no
+  trademark licence — but now carries an explicit, revocable grant to download,
+  install and use it as distributed. The notice also names the legal entity
+  (TrueGradient Artificial Intelligence Private Limited) and separates this
+  plugin's terms from the terms governing the TrueGradient service itself.
+- **`license` is `LicenseRef-TrueGradient-Proprietary`, not `UNLICENSED`.**
+  `UNLICENSED` is an npm convention, not an SPDX identifier, and it reads to a
+  reviewer as "you may not use this". `LicenseRef-` is the SPDX-conformant way
+  to name a licence that is not on the SPDX list.
+- **`displayName: "TrueGradient Planning Analysis"`** in both manifests. Without
+  it the directory falls back to the kebab-case `truegradient-forecast-plugin`,
+  which reads as forecast-only and undersells the supply and inventory skill.
+- **`repository` and `$schema` in `plugin.json`**, and a `version` pin on the
+  marketplace entry. Once listed, CI mirrors repo pushes automatically, so the
+  entry's version is what installers actually receive — a stale pin keeps serving
+  the old plugin however often the repo is updated.
+- **Install instructions in the README** for the directory and for
+  `/plugin marketplace add truegradient/tg-claude-connector-plugin`, which works
+  without waiting on the listing. The archive-upload route is kept and labelled
+  as the org-wide alternative rather than the only path.
+- **`verify-plugin.sh` now covers `marketplace.json`** — that it exists, is valid
+  JSON, pins the same version as `plugin.json`, and agrees with it on display
+  name, description, licence, homepage, repository, author and keywords. The two
+  manifests are rendered in different places, so drift between them shows users
+  one thing and installs another. The script also shells out to `claude plugin
+  validate` when the CLI is available, and asserts that `LICENSE` still grants
+  installation — a guard against the notice being reverted to a form that cannot
+  legally be listed.
 
 ### Removed
 
