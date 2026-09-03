@@ -46,6 +46,25 @@ are the same plugin.
   `/plugin marketplace add truegradient/tg-claude-connector-plugin`, which works
   without waiting on the listing. The archive-upload route is kept and labelled
   as the org-wide alternative rather than the only path.
+- **The connector is documented as a directory entry, not a pasted URL.**
+  `TrueGradient` is now published in Claude's connector directory, so members
+  enable it with one click instead of adding a custom connector. The README told
+  people to paste `https://mcp-server.truegradient.ai/mcp`, which still works but
+  routes them through the unverified-third-party warnings that the directory
+  listing exists to remove. The URL is kept as a documented fallback for
+  organizations that restrict directory connectors.
+- **The connector's name is corrected to `TrueGradient`.** The README called it
+  "TrueGradient AI" in three places, including the troubleshooting step for people
+  who cannot find it — and searching the directory for the longer name returns
+  nothing, so the instruction actively misled the users most in need of it. Both
+  manifest descriptions are corrected to match. The **Community** badge is now
+  explained where members meet it, so the "not verified by Anthropic" notice does
+  not read as a fault.
+- **The admin upload step named an archive that is never built.** It said
+  `truegradient-forecast-plugin-1.0.0.zip`; `package.sh` emits
+  `tg-claude-connector-plugin-<version>.zip` — wrong on the name as well as the
+  version. `verify-plugin.sh` now asserts the README names the archive the script
+  actually produces.
 - **`verify-plugin.sh` now covers `marketplace.json`** — that it exists, is valid
   JSON, pins the same version as `plugin.json`, and agrees with it on display
   name, description, licence, homepage, repository, author and keywords. The two

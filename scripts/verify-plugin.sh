@@ -24,6 +24,11 @@ mv=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' .claude-plugin/marketplace.json
 # the directory keeps serving the old plugin however often the repo is updated.
 [ "$mv" = "$pv" ] && ok "marketplace.json $mv (entry pin)" \
                   || bad "marketplace.json pins '$mv', plugin.json says '$pv'"
+# The admin upload step names an archive by hand. It has been wrong on both the
+# name and the version before, sending admins looking for a file that never existed.
+grep -q "tg-claude-connector-plugin-${pv}\.zip" README.md \
+  && ok "README names the archive package.sh actually builds" \
+  || bad "README does not name tg-claude-connector-plugin-${pv}.zip — the upload step points at a file that is not built"
 if printf '%s' "$pv" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
   ok "semver shape"
 else

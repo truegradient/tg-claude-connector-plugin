@@ -13,9 +13,10 @@ Version 1.0.1
 A set of **instructions** for Claude. It contains no data, no credentials, and no
 executable code.
 
-It works alongside the **TrueGradient AI connector**, which is a separate service
-that provides the read-only tools Claude uses to fetch data. The connector does
-the fetching; this plugin makes Claude use it correctly.
+It works alongside the **TrueGradient connector** — listed under exactly that name
+in Claude's connector directory — a separate service providing the read-only tools
+Claude uses to fetch data. The connector does the fetching; this plugin makes
+Claude use it correctly.
 
 | | |
 |---|---|
@@ -85,9 +86,12 @@ Updates arrive with `/plugin marketplace update truegradient`.
 
 ### Then connect the data
 
-**Settings → Connectors → TrueGradient AI → Connect**, or add a custom connector
-pointed at `https://mcp-server.truegradient.ai/mcp`. Sign in with Google, choose
-your company, then check it with **"Who am I in TrueGradient?"**
+**Settings → Connectors**, find **TrueGradient** in the directory, then **Connect
+to Claude**. Sign in with Google, choose your company, and check it with **"Who
+am I in TrueGradient?"**
+
+The connector is badged **Community** — automated review passed, not
+Anthropic-verified — so Claude shows a notice before connecting. That is normal.
 
 ---
 
@@ -98,7 +102,7 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 ### 1. Upload the plugin
 
 1. Claude → **Organization settings → Plugins → Upload a file**
-2. Select `truegradient-forecast-plugin-1.0.0.zip`
+2. Select `tg-claude-connector-plugin-1.0.1.zip`, as built by `scripts/package.sh`
 3. Confirm **five skills** are detected
 4. Choose an availability level:
 
@@ -110,12 +114,22 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 
 ### 2. Add the connector — do this too
 
-**The plugin alone does not grant data access.** Add the connector at the
+**The plugin alone does not grant data access.** Enable the connector at the
 organization level:
 
-1. **Organization settings → Connectors → Add custom connector**
-2. URL: `https://mcp-server.truegradient.ai/mcp`
-3. Save
+1. **Organization settings → Connectors**
+2. Find **TrueGradient** in the connector directory
+3. Enable it for your organization
+
+`TrueGradient` is published in Claude's connector directory, so no URL needs to
+be pasted. It carries a **Community** badge, meaning it passed Anthropic's
+automated review but is not Anthropic-verified — Claude will say so before
+connecting. That notice is expected, not a fault.
+
+Should your organization restrict directory connectors, the same server is still
+reachable through **Add custom connector** at
+`https://mcp-server.truegradient.ai/mcp`. Prefer the directory entry: the custom
+route shows members more third-party warnings for no benefit.
 
 Do this regardless of the plugin upload. The plugin ships a `.mcp.json` declaring
 the same URL, which some Claude surfaces can pick up automatically — but the org
@@ -142,7 +156,7 @@ to produce numbers) if the tools are absent.
 
 1. **Settings → Plugins** → find **TrueGradient Planning Analysis** → Install
    *(skip if your admin installed it by default)*
-2. **Settings → Connectors** → **TrueGradient AI** → **Connect**
+2. **Settings → Connectors** → find **TrueGradient** → **Connect to Claude**
 3. Sign in with Google and choose your company
 4. Verify: ask **"Who am I in TrueGradient?"** — you should see your company name
 
@@ -264,8 +278,11 @@ skill". Phrasing matters — "sales numbers" may not read as a forecasting quest
 try "forecast".
 
 **No TrueGradient tools available**
-Settings → Connectors → is **TrueGradient AI** listed and connected? If not, add
-`https://mcp-server.truegradient.ai/mcp`. The skills should already be telling you
+Settings → Connectors → is **TrueGradient** connected? If it is not there, search
+the connector directory for it; if your organization blocks directory connectors,
+add `https://mcp-server.truegradient.ai/mcp` as a custom connector instead. Note
+the name is **TrueGradient**, not "TrueGradient AI" — searching the longer name
+finds nothing. The skills should already be telling you
 they have no data access — **if a skill produced numbers with no connector, that is
 a critical bug; please report it.**
 
