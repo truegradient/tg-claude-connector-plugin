@@ -55,6 +55,27 @@ whole ballgame:
 If a question needs both, Claude reads both and says so. The footer always names
 which dataset and which measures produced the number.
 
+### Answers as Excel workbooks
+
+Every skill can answer as a multi-tab workbook: ask for Excel, a spreadsheet,
+an export or a list to act on, and Claude offers one whenever an answer runs to
+more than about 20 rows. The tabs are chosen from the question, always in the
+same order:
+
+| Tab | What it holds |
+|---|---|
+| **Read Me** | the question answered, the source (experiment, dataset, forecast family and lag), the window, every caveat and exclusion, and the provenance footer |
+| **Summary** | roll-ups linked by formula to the main tab |
+| **Main tab** | one row per entity (or group × month) answering the question: `Reorder Sep-Nov`, `Accuracy data`, `Zone cells`, `Change 2026-07`… |
+| **Exception tabs** | what the data disagrees on or cannot measure: forecast outside its own interval, only in one version, not classified, excluded months, unmapped master data |
+
+Every derived number is a live formula, and the same rules apply in the file
+as in chat. Accuracy, bias and change % are always recomputed as a ratio of
+sums, never an average of percentages, and the builder refuses a spec that
+tries. A blank cell means "not in the data"; a 0 is a real zero. One builder,
+`workbook/build_workbook.py`, produces every workbook in the same house style;
+`workbook/WORKBOOK-SPEC.md` holds the tab blueprint for each question.
+
 ---
 
 ## Installing
@@ -337,7 +358,8 @@ nested inside a zip, which is rejected outright**. That is why `package.sh` writ
 its output one level *above* the repo: nothing inside the folder is ever a zip.
 
 **The plugin root must be the archive root.** `.claude-plugin/plugin.json` has to
-sit at the top level of the zip with `references/` and `skills/` beside it. An
+sit at the top level of the zip with `references/`, `skills/` and `workbook/`
+beside it. An
 archive with a wrapper directory does not load.
 
 That is why **GitHub's "Download ZIP" button cannot be used to install this
@@ -347,7 +369,7 @@ archive `scripts/package.sh` builds, attached to a tagged release, and point
 people at that asset rather than at the repo's ZIP link.
 
 `package.sh` runs `verify-plugin.sh` first and then refuses to emit an archive
-that has a wrapper directory, is missing `references/` or `skills/`, does not
+that has a wrapper directory, is missing `references/`, `skills/` or `workbook/`, does not
 carry exactly five `skills/*/SKILL.md` files, or contains `__MACOSX` /
 `.DS_Store` entries. Local-only files (`.claude/`, `.gitignore`, `.git/`) are
 excluded.
@@ -406,7 +428,7 @@ workspace. Any test marked **Fail (critical)** blocks promotion.
 LICENSE                        proprietary; grants installation and use
 README.md                      this file
 CHANGELOG.md
-TEST-CHECKLIST.md              55 acceptance tests (10 groups)
+TEST-CHECKLIST.md              61 acceptance tests (11 groups)
 scripts/verify-plugin.sh       pre-push checks: versions, descriptions,
                                cross-references, rules that must not regress
 scripts/package.sh             builds the upload archive; refuses a bad layout
@@ -425,4 +447,9 @@ skills/
   truegradient-forecast-risk/SKILL.md
   truegradient-forecast-change/SKILL.md
   truegradient-supply-inventory/SKILL.md
+workbook/
+  build_workbook.py            builds every skill's multi-tab Excel workbook
+                               from a JSON spec; enforces the data rules
+  WORKBOOK-SPEC.md             tab blueprints per skill and question, column
+                               types, the spec format
 ```

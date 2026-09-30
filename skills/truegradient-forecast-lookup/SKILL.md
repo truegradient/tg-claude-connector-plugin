@@ -1,6 +1,6 @@
 ---
 name: truegradient-forecast-lookup
-description: Look up the final forecast, actual sales, or forecast uncertainty interval for a specific product, SKU, variant, category, brand, channel, customer, region, or time period from TrueGradient demand planning data. Use this when the user asks what the forecast or actual IS for something specific — "what's the forecast for SKU X next month", "how many units for the North region in Q3", "show me the forecast range for this category", "what did we actually sell last month". Also use to compare a single entity's forecast against its own actuals. Do NOT use for accuracy, error or bias metrics across many entities — use truegradient-forecast-accuracy. Do NOT use for ranking items by risk — use truegradient-forecast-risk. Do NOT use for comparing two forecast versions — use truegradient-forecast-change.
+description: Look up the final forecast, actual sales, or forecast uncertainty interval for a specific product, SKU, variant, category, brand, channel, customer, region, or time period from TrueGradient demand planning data. Use this when the user asks what the forecast or actual IS for something specific — "what's the forecast for SKU X next month", "how many units for the North region in Q3", "show me the forecast range for this category", "what did we actually sell last month". Also use to compare a single entity's forecast against its own actuals. When the lookup spans many entities or periods and is wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy, error or bias metrics across many entities — use truegradient-forecast-accuracy. Do NOT use for risk ranking — use truegradient-forecast-risk. Do NOT use for comparing two forecast versions — use truegradient-forecast-change.
 ---
 
 # Forecast Lookup
@@ -23,7 +23,8 @@ These apply even if you cannot load the reference files:
 6. Missing means unknown. **Never report a missing value as zero.** Never
    interpolate, never carry a value across periods.
 7. If the roster returns `used_archived_fallback: true`, lead with that caveat.
-8. End with the provenance footer (§5).
+8. End with the provenance footer (§5). In a workbook, the footer lives on the
+   Read Me tab and every tab's Source line (see "Excel workbook output").
 
 Full detail: `../../references/SAFETY-CONTRACT.md`
 
@@ -195,6 +196,45 @@ Source
 For a mixed audience: lead with a plain sentence, then the numbers. Do not bury
 the figure in prose, and do not present numbers with no interpretation.
 
+## Excel workbook output
+
+Produce a workbook when the user asks for Excel, a spreadsheet, a file or an
+export, and offer one (one line at the end) when the answer covers more than
+about 20 entity × period rows. One entity for one period stays in chat.
+
+Every rule above still applies, cell by cell. The workbook is:
+
+1. **Read Me**: the question in one sentence with row and entity counts;
+   Source (experiment, id, created date, dataset, forecast family and lag,
+   interval family, pull date); caveats (archived fallback first, if used);
+   entities not found; provenance footer.
+2. **Summary**: per-period totals of forecast, bounds and actual, plus one
+   block per grouping the user named. A grouping block sums across the tab's
+   periods, so build it only for a single period or a total the user asked
+   for. Summed bounds are a range of the total, and the subtitle says so.
+3. **Main tab**: one row per entity × period (`Forecast <window>`), with no
+   totals row, because it spans periods. Or one grid per family
+   (`Forecast by month`) for a month-by-month question.
+4. **Exception tabs**: `Outside model interval` (forecast below its Lower or
+   above its Upper Bound, `ML Forecast` beside it) and `No value for period`
+   (null, never zero).
+
+| Question | Main tab | Exception tabs |
+|---|---|---|
+| many entities, one or few periods | `Forecast <window>` | outside model interval · no value for period · imputed rows |
+| month by month | one tab per family (`Forecast by month`, `Sales by month`) | outside model interval (on a `Forecast <window>` tab) |
+
+Units and value never share a tab. `Forecast vs actual (%)` is a live formula,
+`(forecast − actual) / actual`: positive means over-forecast, and it is blank
+where the actual is 0.
+
+Blueprints G and H, the column types and the spec format:
+`../../workbook/WORKBOOK-SPEC.md` §2L. Read it before building. Build with
+`python <this-skill-dir>/../../workbook/build_workbook.py <spec.json> <out.xlsx>`,
+recalculate, spot-check two totals against the connector, and in chat give the
+headline figure, the family used and the largest caveat. The tables live in
+the file.
+
 ## Boundaries
 
 Hand off rather than answering:
@@ -225,3 +265,7 @@ Out of scope entirely — say so:
 - `../../references/METRICS.md` — deviation sign convention (§6)
 - `../../references/LOCK-FAMILIES.md` — lock families and lags, if asked for the
   locked forecast
+- `../../workbook/WORKBOOK-SPEC.md` — §2L workbook blueprints, column types,
+  the builder's spec format
+- `../../workbook/build_workbook.py` — builds the styled multi-tab workbook from a
+  JSON spec

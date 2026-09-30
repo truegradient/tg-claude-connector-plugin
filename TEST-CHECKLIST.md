@@ -452,6 +452,64 @@ comparable with a fixed-lag one.
 
 ---
 
+## Group 11 — Excel workbooks
+
+For each, open the file in Excel, let it recalculate, and read the Read Me
+first.
+
+### T50 — Workbook routing
+**Prompt:** "Send me our forecast accuracy by category in Excel."
+**Pass:** answered by `truegradient-forecast-accuracy`, not the supply skill,
+with Read Me → Summary → `Accuracy data` → `Current month (partial)` →
+`Excluded months`.
+**Fail:** routed to `truegradient-supply-inventory`, or a single-tab dump.
+
+### T51 — Accuracy is a ratio of sums in the file
+**Prompt:** as T50.
+**Pass:** the Summary total's accuracy equals the headline given in chat, and
+equals `1 − Error used total / Actual total` on `Accuracy data`; filtering
+`Accuracy data` to one category changes its totals row to that category's
+pooled accuracy; the current month appears only on its own tab.
+**Fail (critical):** any accuracy or bias cell that averages or sums row
+percentages; the partial month inside a pooled figure.
+
+### T52 — Lookup workbook keeps periods apart
+**Prompt:** "Export the forecast with its range for every SKU in `<category>`
+for the next three months."
+**Pass:** no totals row across periods on the main tab; the Summary `Period`
+block shows each period separately with no grand total; the subtitle says
+summed bounds are a range of the total; rows outside the model interval are
+listed on their own tab with `ML Forecast`.
+**Fail (critical):** a null forecast shown as 0 anywhere, or one total adding
+different months.
+
+### T53 — Risk workbook quotes, never assigns, the zone
+**Prompt:** "Give me a planner worklist of the highest-risk SKUs in Excel."
+**Pass:** the zone column is headed `trust_zone (stored)` and holds only
+stored values; blank and `Not Available` items sit on `Not classified`;
+`UNKNOWN` sits on `Unmapped master data`, outside the ranking; weighted
+accuracy reads on the 0–100 scale.
+**Fail (critical):** a zone on any row whose stored `trust_zone` is blank, or
+a plain average of `overall_accuracy` as a group figure.
+
+### T54 — Change workbook states the missing history
+**Prompt:** "What changed between the locked baseline and the current forecast?
+Put it in a spreadsheet."
+**Pass:** Read Me's first caveat is the no-version-history statement; both
+versions are named with family and lag; entities absent from one version are
+on `Only in version A/B`, not on the main tab; `Change %` is blank where A is 0.
+**Fail (critical):** a cause asserted without a quoted planner comment, or a
+missing version value treated as 0.
+
+### T55 — Supply workbook unchanged in substance
+**Prompt:** "Give me the reorder list for the next three months in Excel."
+**Pass:** blueprint A: Read Me, Summary, `Reorder <window>`, and the two
+`DOI says / plan says` exception tabs; days columns averaged, never summed.
+**Fail:** a summed days column, or a Summary group with every value missing
+shown as 0 instead of blank.
+
+---
+
 ## Sign-off
 
 | Group | Tests | Result |
@@ -466,6 +524,7 @@ comparable with a fixed-lag one.
 | 8 Scope and refusals | T29–T33 | |
 | 9 Supply and inventory | T34–T42 | |
 | 10 Lock families and lags | T43–T49 | |
+| 11 Excel workbooks | T50–T55 | |
 
 **Any test marked "Fail (critical)" blocks promotion.** These are the cases where a
 wrong answer would look authoritative: fabricated numbers, invented causes,

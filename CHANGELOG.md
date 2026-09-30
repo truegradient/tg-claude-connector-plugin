@@ -1,5 +1,56 @@
 # Changelog
 
+## Unreleased
+
+Every skill can now answer as a multi-tab Excel workbook: Read Me, Summary,
+a main tab and exception tabs, chosen from the question. The supply skill's
+workbook builder, contributed for reorder lists, is now shared by all five
+skills and extended so the forecast rules hold inside the file.
+
+### Added
+
+- **`workbook/`** at the plugin root: `build_workbook.py` (one house style for
+  every workbook) and `WORKBOOK-SPEC.md` (the fixed skeleton, the spec format,
+  and a blueprint per skill and question: §2S supply, §2L lookup, §2A accuracy,
+  §2R risk, §2C change).
+- **An "Excel workbook output" section in every skill**, and the sentence
+  "it builds a multi-tab workbook (Read Me, Summary, detail and exception
+  tabs) whose tabs are chosen from the question" in every description. Each
+  description claims Excel output only for its own kind of question, so
+  "accuracy in Excel" routes to the accuracy skill, not to supply.
+- **Builder column types** for the forecast skills: `delta` (a change in
+  units), `pct_signed`, and `pct100` / `pct100_signed` for percentages
+  TrueGradient stores on a 0–100 scale.
+- **Pooled percentages as live ratios of sums.** A detail column with
+  `"total": "formula"` re-evaluates its own formula on the totals row, and a
+  Summary block's `ratios` compute from the block's own sums. So accuracy is
+  `1 − Σerror / Σactual` wherever it appears, and it follows Excel filters.
+- **Refusals in the builder**: averaging a percent column, summing one in a
+  Summary block (except shares of one whole), a total formula over a column
+  with no total, and `share_of` on a block without a Total row. Each exits with
+  a `spec error:` naming the rule.
+- `verify-plugin.sh` checks every description offers the workbook, every
+  skill has the section, every `../../workbook/` link resolves, the builder
+  compiles and, where `openpyxl` is installed, the spec's example builds.
+  `package.sh` requires `workbook/` and excludes Python caches.
+- `TEST-CHECKLIST.md` Group 11, T50–T55.
+
+### Changed
+
+- **A Summary group whose rows all lack a value is blank, not 0.** `SUMIFS`
+  over empty cells returns 0, which the file's own legend reads as a real
+  zero, e.g. a group with no in-transit data shown as "0 in transit". A group
+  with no rows at all still totals 0. Every Summary value in the contributed
+  reorder example evaluates the same as before.
+- A Summary block can drop its Total row (`"total": false`), which the lookup
+  blueprint uses so forecasts for different months are never added together.
+- Summary group labels on a date column are written as dates, so they match
+  the date cells they count.
+- The default Blank vs 0 legend no longer calls every 0 "modelled", which is
+  wrong for recorded sales; `readme.blank_vs_zero` overrides it.
+- The supply description was 1,241 characters, over the 1,024 limit at which
+  the plugin fails to load; it is now within it, with the workbook sentence kept.
+
 ## 1.0.1 — 2026-09-04
 
 Licensing and packaging for the public Claude plugin directory listing. **No

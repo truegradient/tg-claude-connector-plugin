@@ -89,6 +89,39 @@ missing=$(grep -rhno '\.\./\.\./references/[A-Za-z-]*\.md' --include='*.md' skil
           | while read -r r; do [ -f "$r" ] || echo "$r"; done)
 [ -z "$missing" ] && ok "every ../../references/*.md target exists" \
                   || bad "dangling reference(s): $missing"
+missing=$(grep -rhno '\.\./\.\./workbook/[A-Za-z_-]*\.[a-z]*' --include='*.md' skills \
+          | sed 's|.*\.\./\.\./|| ' | tr -d ' ' | sort -u \
+          | while read -r r; do [ -f "$r" ] || echo "$r"; done)
+[ -z "$missing" ] && ok "every ../../workbook/* target exists" \
+                  || bad "dangling workbook reference(s): $missing"
+
+sect "Workbook"
+# Every skill can answer as a multi-tab workbook, and says so where routing
+# reads it. The builder is shared, so one broken edit breaks all five skills.
+for f in skills/*/SKILL.md; do
+  dir=$(basename "$(dirname "$f")")
+  sed -n 's/^description: //p' "$f" | grep -q 'multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question' \
+    && ok "$dir  description offers the workbook" \
+    || bad "$dir  description no longer says it builds the multi-tab workbook"
+  grep -q '^## Excel workbook output' "$f" \
+    || bad "$dir  has no \"Excel workbook output\" section to follow"
+done
+if command -v python3 >/dev/null 2>&1; then
+  python3 -m py_compile workbook/build_workbook.py 2>/dev/null \
+    && ok "workbook/build_workbook.py compiles" || bad "workbook/build_workbook.py does not compile"
+  find workbook -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null
+  # The spec's own example must build: it is what Claude copies from.
+  if python3 -c 'import openpyxl' 2>/dev/null; then
+    tmp=$(mktemp -d)
+    awk '/^```json$/{f=1;next} /^```$/{if(f){exit}} f' workbook/WORKBOOK-SPEC.md > "$tmp/spec.json"
+    python3 workbook/build_workbook.py "$tmp/spec.json" "$tmp/out.xlsx" >/dev/null 2>"$tmp/err" \
+      && ok "WORKBOOK-SPEC.md example builds" \
+      || bad "WORKBOOK-SPEC.md example fails to build: $(head -1 "$tmp/err")"
+    rm -rf "$tmp"
+  else
+    printf '  skip  openpyxl not installed — the spec example was not built\n'
+  fi
+fi
 
 sect "Rules that must never be contradicted"
 grep -rq 'min(100' references skills 2>/dev/null \

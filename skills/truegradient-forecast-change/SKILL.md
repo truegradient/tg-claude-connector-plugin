@@ -1,6 +1,6 @@
 ---
 name: truegradient-forecast-change
-description: Compare two TrueGradient forecast families within one experiment and report exactly what changed — for example the frozen baseline versus the current operational forecast, the model output versus a planner-reviewed view, or the operational versus the consensus forecast. Use this for "what changed since the locked forecast", "how does the current forecast differ from the locked baseline", "why did the forecast for SKU X change", "how far has consensus moved off the plan", "what moved between the baseline and final forecast". Comparison is always between two column families in the same experiment; TrueGradient does not keep prior planning cycles available, so cross-cycle comparison is not supported. Reports what changed factually and states clearly that TrueGradient has no forecast version history or audit trail, so root causes cannot be evidenced beyond any planner comments recorded in the data. Do NOT use for accuracy against actuals — use truegradient-forecast-accuracy.
+description: Compare two TrueGradient forecast families within one experiment and report exactly what changed — for example the frozen baseline versus the current operational forecast, the model output versus a planner-reviewed view, or the operational versus the consensus forecast. Use this for "what changed since the locked forecast", "why did the forecast for SKU X change", "how far has consensus moved off the plan", "what moved between the baseline and final forecast". Compares two column families in the same experiment; prior planning cycles are not kept, so cross-cycle comparison is not supported. States that TrueGradient has no version history or audit trail, so causes cannot be evidenced beyond recorded planner comments. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy against actuals — use truegradient-forecast-accuracy.
 ---
 
 # Forecast Change Comparison
@@ -45,7 +45,9 @@ These apply even if you cannot load the reference files:
    undefined. Never print infinity or a vast percentage.
 6. Missing in one version is **not** zero. Report it as "not present in version X".
 7. State the no-version-history limitation whenever the user asks *why*.
-8. End with the provenance footer, naming **both** versions.
+8. End with the provenance footer, naming **both** versions. In a workbook,
+   the footer lives on the Read Me tab and every tab's Source line (see
+   "Excel workbook output").
 
 Full detail: `../../references/SAFETY-CONTRACT.md`
 
@@ -213,6 +215,49 @@ that prior-cycle experiments are not available to read. Do not compare a differe
 month, and do not compare a different experiment, and present either as a version
 change.
 
+## Excel workbook output
+
+Produce a workbook when the user asks for Excel, a spreadsheet, a file or an
+export, and offer one (one line at the end) when the change touches more than
+about 20 entities. A single entity's change stays in chat.
+
+Every rule above still applies, cell by cell, and the honesty requirement
+comes first: **the Read Me's first caveat is always that TrueGradient records
+no forecast version history, edit authorship or reason codes**, so the file
+measures changes exactly and explains them only by quoting a planner comment.
+
+1. **Read Me**: the question in one sentence; Source (experiment, dataset,
+   Version A and Version B as full family names with lags, target month, pull
+   date); the no-history caveat; whether `SnOP Comments` exists and whether it
+   holds any text; provenance footer naming both versions.
+2. **Summary**: one block per grouping with A, B, `Change`, and `Change %` as
+   a ratio of the block's own sums (`Change / |A|`, blank where A sums to 0).
+3. **Main tab** `Change <month>`: only entities present in **both** versions,
+   with `A: <family>`, `B: <family>`, `Change` and `Change %` as live formulas,
+   and the planner comment quoted verbatim. Ranked by the absolute change,
+   not the percentage.
+4. **Exception tabs**: `Only in version B` and `Only in version A`, each
+   listing values "not present in version X", never zero, and each included
+   even when empty.
+
+| Question | Main tab | Exception tabs |
+|---|---|---|
+| what changed since the baseline / off the plan | `Change <month>` | only in version A · only in version B |
+| several target months | one `Change <month>` tab per month, never one grid | the same, per month |
+| two lags of one lock family | `Horizon <month>`, titled a horizon comparison, not a change | none |
+
+A row missing from one version stays off the main tab, because a blank in a
+subtraction reads as 0 and would invent a change. Units and value never share
+a tab. A secondary lock shown beside the global lock is labelled as not a
+calculation basis.
+
+Blueprint M, the column types and the spec format:
+`../../workbook/WORKBOOK-SPEC.md` §2C. Read it before building. Build with
+`python <this-skill-dir>/../../workbook/build_workbook.py <spec.json> <out.xlsx>`,
+recalculate, spot-check that the totals of A and B match the grouped sums you
+read, and in chat give the net change, where it is concentrated and the
+no-history caveat.
+
 ## Boundaries
 
 - accuracy against actuals → **truegradient-forecast-accuracy**
@@ -232,3 +277,7 @@ change.
 - `../../references/DATA-CONTRACT.md` — the forecast family table
 - `../../references/COLUMN-DISCOVERY.md` — overlap checking
 - `../../references/TOOL-GUIDE.md` — experiment resolution and fetch shapes
+- `../../workbook/WORKBOOK-SPEC.md` — §2C workbook blueprints, column types,
+  the builder's spec format
+- `../../workbook/build_workbook.py` — builds the styled multi-tab workbook from a
+  JSON spec

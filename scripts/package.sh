@@ -37,6 +37,7 @@ zip -qr "$out" . \
   -x 'dist/*' 'dist' \
   -x '.gitignore' \
   -x '*.zip' \
+  -x '*/__pycache__/*' '*.pyc' \
   -x '.DS_Store' '*/.DS_Store' '__MACOSX/*'
 
 # The archive is worthless if the manifest is not at the root — prove it is.
@@ -51,7 +52,7 @@ printf '%s\n' "$listing" | grep -E ' [^ /]+/\.claude-plugin/plugin\.json$' >/dev
   && reject "the archive has a wrapper directory — it will not load."
 printf '%s\n' "$listing" | grep -E '__MACOSX|\.DS_Store' >/dev/null \
   && reject "macOS cruft in the archive."
-for d in references skills; do
+for d in references skills workbook; do
   printf '%s\n' "$listing" | grep -E " $d/" >/dev/null || reject "$d/ is missing."
 done
 n_skills=$(printf '%s\n' "$listing" | grep -cE ' skills/[^/]+/SKILL\.md$')

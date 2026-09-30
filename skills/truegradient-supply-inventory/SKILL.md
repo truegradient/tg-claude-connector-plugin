@@ -1,6 +1,6 @@
 ---
 name: truegradient-supply-inventory
-description: Answer supply and inventory questions from TrueGradient inventory-optimization data — stock on hand, total inventory, days of cover, stockout timing, reorder plans, points and quantities, safety stock, in-transit, open POs and inbound supply, excess and dead stock, sales-loss exposure, working capital, and stock transfers. Use for "how does inventory look month on month", "when do we run out of X", "what should I reorder now", "which SKUs are at stockout risk", "where is my excess inventory", "is this SKU covered through the season", "how much working capital is tied up". Routes time-phased and future-period questions to the Supply Plan dataset and current-snapshot questions to DOI Details. Do NOT use for demand-forecast values, forecast accuracy, bias, forecast risk ranking, or comparing forecast versions — use the truegradient-forecast-* skills. Do NOT use for pricing, markdown, elasticity or promotion questions.
+description: Answer supply and inventory questions from TrueGradient inventory-optimization data — stock on hand, total inventory, days of cover, stockout timing, reorder plans, points and quantities, safety stock, in-transit, open POs and inbound supply, excess and dead stock, sales-loss exposure, working capital, and stock transfers. Use for "how does inventory look month on month", "when do we run out of X", "what should I reorder now", "which SKUs are at stockout risk", "where is my excess inventory". When a supply answer is wanted as Excel, a spreadsheet or a list to act on, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Routes time-phased and future-period questions to the Supply Plan dataset and current-snapshot questions to DOI Details. Do NOT use for forecast values, accuracy, bias, risk ranking or forecast version changes — use the truegradient-forecast-* skills. Do NOT use for pricing, markdown or promotion questions.
 ---
 
 # Supply & Inventory Analysis
@@ -106,7 +106,8 @@ These apply even if you cannot load the reference files:
 10. The first period column is the **current, partial** period. Say so.
 11. If the roster returns `used_archived_fallback: true`, lead with that caveat.
 12. Separate what the data says, what you calculated, and what you recommend.
-13. End with the provenance footer.
+13. End with the provenance footer. In a workbook, the footer lives on the
+    Read Me tab and every tab's Source line (see "Excel workbook output").
 
 Also binding: `../../references/SAFETY-CONTRACT.md` (§1 workspace, §5 freshness,
 §6 quality flags, §7 gaps, §10 causal claims, §11 tiers, §12 footer, §13
@@ -213,7 +214,7 @@ reflect the workspace's configuration. Cite them as stored.
 | loss exposure | `Potential_Sales_Loss`, `Potential_Sales_Loss_value` — or `Final_Potential_Sales_Loss` **if present** | subtract forecast from supply |
 | excess | `Excess_Stock`, `Excess_Stock_value` — or `updated_Excess_Stock` **if present** | apply a days-of-supply multiple |
 | working capital | `soh_value` | derive it from units × price yourself |
-| unit economics | `Selling Price`, `Cost`, `COGS`, `Margin%` | use `selling_price` or `AVG COGS` — **those names do not exist** |
+| unit economics | `Selling Price`, `Cost`, `COGS`, `Margin%` — whichever the live list has | assume a name: `selling_price` was absent in both observed workspaces, and `AVG COGS` was absent in two but present in a third (Bearaby), so only the live list decides |
 | **risk band** | **`Stock_Risk_Level` — the dataset's own, quoted with attribution** | **derive or infer one** |
 
 The base names above are the ones verified present. The `updated_*` / `Final_*`
@@ -284,6 +285,69 @@ Source
 
 Note what this does **not** do: no derived risk label, no reconciled balance, no
 unmet demand inferred by subtraction, and every pre/post-transfer choice named.
+
+## Excel workbook output
+
+Produce a workbook when the user asks for Excel, a spreadsheet, a file, an
+export, or a list they will act on, and offer one (one line at the end) when
+the answer is a list of more than about 20 entities. A single number or a
+single entity stays in chat.
+
+The workbook carries the same answer contract as the chat shape above, laid out
+as tabs. Always:
+
+1. **Read Me**: the question answered in one sentence with row and entity
+   counts; Source (experiment label, id, created date, datasets, Variables and
+   fields, pull date); scope rule; tabs; numbered caveats; exclusions; colour
+   key; blank-vs-0 legend; provenance footer.
+2. **Summary**: formula-linked roll-ups of the main tab, one block per
+   grouping, ranked by money with share of total.
+3. **Main tab**: one row per entity answering the question, with Suggested
+   action and Check / flag columns where the question is a decision.
+4. **Exception tabs**: where `DOI Details` and `Supply Plan` disagree, what the
+   scope rule excluded, and (only with a cross-check connector) what TG cannot
+   see.
+
+Which main and exception tabs to build depends on the question:
+
+| Question | Main tab | Exception tabs |
+|---|---|---|
+| reorder plan for a window | `Reorder <window>` (Supply Plan `Reorder Plan` > 0, plus DOI stock context) | DOI says reorder, plan doesn't · plan says reorder, DOI doesn't · excluded rows |
+| reorder now | `Reorder now` (`TG Reorder now` > 0, by value) | Supply Plan schedules it later |
+| stockout risk / when do we run out | `Stockout risk` (by `Potential_Sales_Loss_value`) + `End Inventory by month` | out before any receipt |
+| excess / working capital | `Excess stock` (by `Excess_Stock_value`) | excess and stockout in the same SKU |
+| inventory over time | one tab **per Variable** (`End Inventory by month`, …) | hits zero in horizon |
+| one entity | `<SKU> plan`, units and days kept apart | none |
+
+Full blueprints (columns, summary blocks, action and flag rules) and the spec
+format: `../../workbook/WORKBOOK-SPEC.md` §2S. Read it before building.
+
+Build with the bundled script rather than hand-styling, so every workbook has
+the same house style (Arial; navy header row with white bold text; grey source
+line under the title; frozen panes and filters; SUBTOTAL totals; orange, yellow
+and green action fills; yellow flag cells) and the data rules are enforced:
+
+```
+python <this-skill-dir>/../../workbook/build_workbook.py <spec.json> /mnt/user-data/outputs/<Company>_TG_<Topic>_<Window>.xlsx
+```
+
+Then recalculate with the xlsx skill's `recalc.py`, fix anything it reports,
+spot-check two or three totals against what the connector returned, and
+present the file. The chat reply is the decision in two or three sentences,
+the headline totals and the largest caveat; the tables live in the file.
+
+Rules that carry into the file:
+- Derived figures (window totals, values, cover gap, shares) are **live
+  formulas**; TG quantities are stored values.
+- A **days** column is averaged, never summed (the builder refuses a sum); a
+  **rate** column has no total unless it is a deliberate portfolio-per-day sum.
+- One `Variable` per time-phased grid; mark the first period `(partial)`.
+- `null` for not-in-data, `0` for a modelled zero; an absent measure gets no
+  column and a caveat.
+- Suggested action is your recommendation: a short fixed label set, its rule
+  in a footnote and in Read Me, never a `Stock_Risk_Level` label.
+- Tabs over about 300 rows keep the top rows by value and say what share of
+  the total they carry.
 
 ## Answering the hard ones
 
@@ -363,3 +427,7 @@ Out of scope entirely — say so:
   column pattern differs from the forecast regex
 - `../../references/TOOL-GUIDE.md` — batching, truncation, broken aggregations,
   errors
+- `../../workbook/WORKBOOK-SPEC.md` — tab blueprints per question, column
+  conventions, action and flag rules, the builder's spec format
+- `../../workbook/build_workbook.py` — builds the styled multi-tab workbook from a
+  JSON spec

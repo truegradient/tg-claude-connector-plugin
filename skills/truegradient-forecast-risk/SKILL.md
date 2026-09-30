@@ -1,6 +1,6 @@
 ---
 name: truegradient-forecast-risk
-description: Rank which products, SKUs, variants, categories, brands, channels or regions carry the most forecast risk in TrueGradient, combining the stored accuracy, bias, volume-contribution and trust_zone columns so that material items rank above trivial ones and systematic error is told apart from volatility. Use this for "which SKUs are highest risk", "where should planners focus", "what's most likely to be wrong next cycle", "top risk items by volume", "which categories need review", "is the forecast trustworthy for these items". Do NOT use to report a single entity's forecast value — use truegradient-forecast-lookup. Do NOT use for an overall accuracy or bias trend — use truegradient-forecast-accuracy.
+description: Rank which products, SKUs, variants, categories, brands, channels or regions carry the most forecast risk in TrueGradient, combining the stored accuracy, bias, volume-contribution and trust_zone columns so that material items rank above trivial ones and systematic error is told apart from volatility. Use this for "which SKUs are highest risk", "where should planners focus", "what's most likely to be wrong next cycle", "top risk items by volume", "which categories need review", "is the forecast trustworthy for these items". When the ranking is wanted as Excel, a spreadsheet or a planner worklist, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use to report a single entity's forecast value — use truegradient-forecast-lookup. Do NOT use for an overall accuracy or bias trend — use truegradient-forecast-accuracy.
 ---
 
 # Forecast Risk Ranking
@@ -99,7 +99,8 @@ These apply even if you cannot load the reference files:
    the proxy and that it is not a per-item history audit. At group grain, where
    the month count comes from the same grouped call, compute it properly.
 8. Never impute an accuracy from a group average and present it as an item's own.
-9. End with the provenance footer.
+9. End with the provenance footer. In a workbook, the footer lives on the
+   Read Me tab and every tab's Source line (see "Excel workbook output").
 
 Full detail: `../../references/SAFETY-CONTRACT.md`
 
@@ -562,6 +563,53 @@ This is the most common phrasing and it needs care. Answer with:
 
 Do not answer yes or no on your own authority.
 
+## Excel workbook output
+
+Produce a workbook when the user asks for Excel, a spreadsheet, a file, an
+export or a planner worklist, and offer one (one line at the end) when the
+ranking runs past about 20 rows. A handful of groups stays in chat.
+
+Every rule above still applies, cell by cell. Above all: **the stored
+`trust_zone` is the classification**, quoted in its stored spelling in a
+column headed `trust_zone (stored)`. The workbook arranges and weights it and
+never assigns, derives or fills in a zone.
+
+1. **Read Me**: the question in one sentence; Source (experiment, dataset,
+   every stored column read, pull date); which figures are stored and which
+   derived; that the thresholds behind the zones are configured in
+   TrueGradient and not readable; the contribution window against the accuracy
+   window; rows read out of rows in the dataset; the placeholder group's
+   volume share and its effect on portfolio accuracy; provenance footer.
+2. **Summary**: a `Group` block ranked by the volume the dataset's
+   `trust_zone` places in Critical or Low Trust, with a `Weighted accuracy`
+   ratio (`Σ(accuracy × share) / Σ share`, never a plain average); a
+   `trust_zone (stored)` block in the documented severity order.
+3. **Main tab**: `Zone cells` (one row per group × zone, from the grouped read,
+   the preferred path) or `Risk items` (one row per item, a planner worklist).
+4. **Exception tabs**: `Unmapped master data`, placed before the ranked tab
+   and kept out of it; `Not classified` (blank or `Not Available` zone:
+   unknown risk, not low risk); `Insufficient history` at item grain.
+
+| Question | Main tab | Exception tabs |
+|---|---|---|
+| which categories / brands need review | `Zone cells` by group | unmapped master data · not classified |
+| which SKUs are highest risk | `Risk items`, zone severity then volume share | not classified · insufficient history |
+| no `trust_zone` column in this dataset | `Risk items` with `Exposure (derived)` | insufficient history |
+
+Stored percentages keep TrueGradient's 0–100 scale (`pct100`), and a stored
+`<date> Bias` keeps its signed scale, where 0 = unbiased (`pct100_signed`).
+`Error character` (`|bias| / (100 − accuracy)`) goes in only when bias and
+accuracy cover the same window, and a value above 1 means the origin is wrong:
+stop and recheck. The read is a computed read: 1,000 rows at most, no
+pagination, so partition by filters and state the coverage.
+
+Blueprints J, K and L, the column types and the spec format:
+`../../workbook/WORKBOOK-SPEC.md` §2R. Read it before building. Build with
+`python <this-skill-dir>/../../workbook/build_workbook.py <spec.json> <out.xlsx>`,
+recalculate, spot-check that the Summary's volume shares sum to the share you
+read, and in chat give where to start, the zone attribution and the largest
+caveat.
+
 ## Boundaries
 
 - a single forecast value → **truegradient-forecast-lookup**
@@ -580,3 +628,7 @@ Do not answer yes or no on your own authority.
 - `../../references/COLUMN-DISCOVERY.md` — detecting the stored metric columns
 - `../../references/TOOL-GUIDE.md` — batching, truncation, errors
 - `../../references/DATA-CONTRACT.md` — the AB-class rule for segment filters
+- `../../workbook/WORKBOOK-SPEC.md` — §2R workbook blueprints, column types,
+  the builder's spec format
+- `../../workbook/build_workbook.py` — builds the styled multi-tab workbook from a
+  JSON spec

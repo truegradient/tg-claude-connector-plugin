@@ -1,6 +1,6 @@
 ---
 name: truegradient-forecast-accuracy
-description: Measure TrueGradient forecast accuracy, bias, or error trend over past months — accuracy percentages computed as 1 − WMAPE, whether the forecast systematically over- or under-forecasts, and which products, categories, channels or regions are improving or worsening. Use this for "how accurate is our forecast", "what's our forecast bias", "which categories have worsening WAPE", "what's the error trend", "are we over-forecasting", "how good was last quarter's forecast". Measures only months where both actual sales and the frozen baseline forecast exist; the current incomplete month is kept out of the pooled figure but still shown as a partial month-to-date point so the direction of travel is visible. Do NOT use for a forward-looking forecast value — use truegradient-forecast-lookup. Do NOT use for ranking items by business risk — use truegradient-forecast-risk.
+description: Measure TrueGradient forecast accuracy, bias, or error trend over past months — accuracy percentages computed as 1 − WMAPE, whether the forecast systematically over- or under-forecasts, and which products, categories, channels or regions are improving or worsening. Use this for "how accurate is our forecast", "what's our forecast bias", "which categories have worsening WAPE", "what's the error trend", "are we over-forecasting", "how good was last quarter's forecast". Measures only months where both actual sales and the frozen baseline exist; the incomplete current month is kept out of the pooled figure but shown as a partial month-to-date point. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for a forward-looking forecast value — use truegradient-forecast-lookup. Do NOT use for ranking items by business risk — use truegradient-forecast-risk.
 ---
 
 # Forecast Accuracy & Bias
@@ -57,7 +57,8 @@ These apply even if you cannot load the reference files:
    derive it, never fill one in. Thresholds are
    configured per workspace and no tool can read them. Report raw percentages.
 9. Fewer than 3 eligible months → say the figure is not yet meaningful.
-10. End with the provenance footer.
+10. End with the provenance footer. In a workbook, the footer lives on the
+    Read Me tab and every tab's Source line (see "Excel workbook output").
 
 Full detail: `../../references/SAFETY-CONTRACT.md`
 
@@ -420,6 +421,54 @@ Always print the formula beside the number.
 
 Full detail: `../../references/METRICS.md` §7.
 
+## Excel workbook output
+
+Produce a workbook when the user asks for Excel, a spreadsheet, a file or an
+export, and offer one (one line at the end) when the answer ranks more than
+about 20 groups. A single portfolio figure stays in chat.
+
+Every rule above still applies, cell by cell. The workbook is laid out so that
+**every pooled figure is a live ratio of sums**, and an average of percentages
+never appears anywhere:
+
+1. **Read Me**: the question in one sentence; Source (experiment, dataset,
+   global lock family **and lag**, actual family, pull date); the formula in
+   words; the exact eligible window and every excluded month with its reason;
+   the numerator basis; stored `overall_accuracy` / `rolling_accuracy` quoted
+   as precomputed, with their window unreadable; "not yet meaningful" if
+   fewer than 3 months; provenance footer.
+2. **Summary**: a `Month` block (the trend) and a `Group` block, worst first,
+   each with `Accuracy` = `1 − Σerror / Σactual` and `Bias` =
+   `(Σbaseline − Σactual) / Σactual` as **ratios of the block's own sums**.
+3. **Main tab** `Accuracy data`: one row per group × **eligible** month, with
+   `Actual`, `Baseline`, the lock's `Abs Error column`, `Error used`, and
+   `Accuracy` and `Bias` as formulas whose totals row re-evaluates the formula
+   on the totals. Filter it to one group and the totals row is that group's
+   pooled accuracy.
+4. **Other tabs**: `Current month (partial)`, never on the main tab and so
+   never pooled; `Excluded months`; `Earlier vs later` for "which groups are
+   worsening".
+
+| Question | Main tab | Other tabs |
+|---|---|---|
+| how accurate / what's the bias | `Accuracy data` (one "All" group, or by the grain asked) | current month (partial) · excluded months |
+| which groups are worst | `Accuracy data` by group; Summary `Group` block worst first | current month (partial) · excluded months |
+| which groups are worsening | `Earlier vs later` | excluded months |
+| consensus accuracy | `Accuracy data` with consensus columns beside the lock's | current month (partial) · excluded months |
+
+`Error used` is the numerator rule as a formula: the lock's own Abs Error sum
+when it exists and is above 0, otherwise `|actual − baseline|`, flagged as the
+netted fallback. A placeholder group (`UNKNOWN`) stays in the rows and the
+totals, on its own line, flagged as unmapped master data. Accuracy is never
+capped or floored: a negative figure is shown as it is.
+
+Blueprint I, the column types and the spec format:
+`../../workbook/WORKBOOK-SPEC.md` §2A. Read it before building. Build with
+`python <this-skill-dir>/../../workbook/build_workbook.py <spec.json> <out.xlsx>`
+(it refuses to average or sum a percentage), recalculate, check that the
+Summary total's accuracy equals your computed headline, and in chat give the
+headline with its window, family and lag, and the largest caveat.
+
 ## Boundaries
 
 - a forward-looking forecast value → **truegradient-forecast-lookup**
@@ -439,3 +488,7 @@ Full detail: `../../references/METRICS.md` §7.
 - `../../references/COLUMN-DISCOVERY.md` — eligible-set construction
 - `../../references/TOOL-GUIDE.md` — batching, truncation, errors
 - `../../references/DATA-CONTRACT.md` — why coverage is ragged
+- `../../workbook/WORKBOOK-SPEC.md` — §2A workbook blueprints, column types,
+  the builder's spec format
+- `../../workbook/build_workbook.py` — builds the styled multi-tab workbook from a
+  JSON spec
