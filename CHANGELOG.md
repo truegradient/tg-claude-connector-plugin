@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 — 2026-10-06
 
 Every skill can now answer as a multi-tab Excel workbook: Read Me, Summary,
 a main tab and exception tabs, chosen from the question. The supply skill's

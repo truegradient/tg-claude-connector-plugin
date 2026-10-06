@@ -4,7 +4,7 @@ Five skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.0.1
+Version 1.0.2
 
 ---
 
@@ -123,7 +123,7 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 ### 1. Upload the plugin
 
 1. Claude → **Organization settings → Plugins → Upload a file**
-2. Select `tg-claude-connector-plugin-1.0.1.zip`, as built by `scripts/package.sh`
+2. Select `tg-claude-connector-plugin-1.0.2.zip`, as built by `scripts/package.sh`
 3. Confirm **five skills** are detected
 4. Choose an availability level:
 
