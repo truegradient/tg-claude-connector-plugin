@@ -510,6 +510,119 @@ shown as 0 instead of blank.
 
 ---
 
+## Group 12 — Year on year
+
+### T56 — Routing
+**Prompt:** "How are sales tracking versus last year?"
+**Pass:** `truegradient-year-on-year` answers. "How accurate were we?" still goes to
+accuracy, and "what changed since the locked forecast" still goes to change.
+**Fail:** the YoY skill answering an accuracy or change question, or the reverse.
+
+### T57 — Calendar pairing, not position
+**Prompt:** "Year to date versus last year."
+**Pass:** every month pairs with the same `YYYY-MM` a year earlier; both windows
+are stated exactly; a month missing on either side leaves both windows and is
+listed with its reason.
+**Fail (critical):** a pair built by column position, or windows of different
+lengths on the two sides.
+
+### T58 — Current month held out
+**Prompt:** "How is this month doing versus the same month last year?"
+**Pass:** says the current month's sales are month-to-date and not comparable
+with a full month; offers the last completed month instead.
+**Fail (critical):** a month-to-date total compared with a full month and reported
+as a decline.
+
+### T59 — Ratio of sums
+**Prompt:** "YoY growth by category, and overall."
+**Pass:** overall growth equals `(Σ this − Σ last) / Σ last` on portfolio sums;
+categories ranked by absolute change; `UNKNOWN` on its own line, kept in the total.
+**Fail (critical):** overall growth as an average of category growths.
+
+### T60 — Last-year basis checked
+**Setup:** a workspace with `LY Sales`.
+**Prompt:** "Sales versus last year, last 6 months."
+**Pass:** names the basis (`Sales` 12 months earlier by default) and reports
+whether `LY Sales` agrees, month by month; never mixes the two in one figure.
+**Fail:** `LY Sales` used as this year's actual, or the bases switched mid-window.
+
+### T61 — Plan versus last year is labelled as the plan
+**Prompt:** "What growth does next year's forecast imply?"
+**Pass:** names the forecast family; calls the figure what the plan assumes, not
+growth; includes the interval with its columns, attributed to `ML Forecast`;
+puts the realism check (plan growth versus recent actual growth) under *What to
+consider*.
+**Fail (critical):** plan growth presented as a measured or expected outcome.
+
+### T62 — Several families, never blended
+**Prompt:** "Compare Forecast and ML Forecast against last year for next quarter."
+**Pass:** one growth figure per family against the same base. With
+`Consensus Forecast` asked for in a workspace without it: says so, and does not
+substitute `Forecast`.
+**Fail (critical):** an average or sum across families, or `Forecast` passed off as
+consensus.
+
+### T63 — Zero base
+**Prompt:** YoY for an item or group with no sales a year earlier.
+**Pass:** reports the absolute change and says growth is undefined.
+**Fail:** a percentage, infinity, or "+100%".
+
+### T64 — Workbook
+**Prompt:** "Year to date versus last year by category, in Excel."
+**Pass:** blueprint N: `YoY by month` with `Growth` as a live ratio whose totals
+row is the window growth, `Like-for-like`, `Excluded months`; the Summary total's
+growth equals the chat headline.
+**Fail (critical):** a growth column averaged or summed anywhere.
+
+### T65 — Stored YoY column not used
+**Setup:** an experiment carrying `<date> YoY Perc Change`.
+**Prompt:** "What YoY growth is planned for next quarter?"
+**Pass:** growth computed from sums with the family named. If the stored column is
+mentioned, it is described as the lock against `LY Sales`, per row.
+**Fail (critical):** an `avg` or `sum` of `YoY Perc Change` reported as growth, or
+the column attributed to `Forecast`.
+
+### T66 — Month the experiment was created in is held out
+**Setup:** an experiment created mid-month that has a `Sales` column for that month.
+**Prompt:** "Year to date versus last year."
+**Pass:** the creation month is held out as partial, citing the creation date,
+and shown on its own line.
+**Fail (critical):** the creation month pooled into the year-to-date figure without comment.
+
+### T67 — Stale data, relative question
+**Setup:** an experiment whose actuals end more than a month ago.
+**Prompt:** "How did February do versus last year, and how is year to date?"
+**Pass:** the first sentence gives the data date. February resolves to the latest
+February with actuals on both sides, with its year. YTD is Jan → the data date.
+Any 2026 figure is labelled as plan.
+**Fail:** an old window presented as current, or "no data" without offering the latest one.
+
+### T68 — Placeholder rows drive growth
+**Setup:** an experiment where `UNKNOWN` rows carry more than a quarter of the change.
+**Prompt:** "Sales versus last year, year to date."
+**Pass:** the headline gives the total and, beside it, growth excluding `UNKNOWN`,
+because `UNKNOWN` carries more than a quarter of the change.
+**Fail:** only the total, with the `UNKNOWN` effect left in a footnote or not mentioned.
+
+### T69 — Single-row outlier
+**Setup:** an experiment with one row far above its own neighbouring months in one window month.
+**Prompt:** "Year to date 2025 versus 2024."
+**Pass:** the headline keeps the row. A labelled "excluding one row" sensitivity is
+given, with the row described in numbers. No cause is asserted.
+**Fail (critical):** the row silently dropped, or called a data error as fact.
+**Fail:** no mention of the row.
+
+### T70 — Unanswerable comparisons routed honestly
+**Prompts:** "Is our stock up on last year?" / "How does this year's forecast compare with last year's forecast?"
+**Pass:** stock: says no dataset holds last year's stock position and offers
+alternatives, with no estimate. Forecast: says the comparison is against last
+year's sales, offers plan versus last year's sales, and points to accuracy if
+that was the meaning.
+**Fail (critical):** an estimated prior-year stock figure, or last year's sales
+presented as last year's forecast.
+
+---
+
 ## Sign-off
 
 | Group | Tests | Result |
@@ -525,6 +638,7 @@ shown as 0 instead of blank.
 | 9 Supply and inventory | T34–T42 | |
 | 10 Lock families and lags | T43–T49 | |
 | 11 Excel workbooks | T50–T55 | |
+| 12 Year on year | T56–T70 | |
 
 **Any test marked "Fail (critical)" blocks promotion.** These are the cases where a
 wrong answer would look authoritative: fabricated numbers, invented causes,

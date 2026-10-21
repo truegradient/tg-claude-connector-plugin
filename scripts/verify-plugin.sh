@@ -97,7 +97,7 @@ missing=$(grep -rhno '\.\./\.\./workbook/[A-Za-z_-]*\.[a-z]*' --include='*.md' s
 
 sect "Workbook"
 # Every skill can answer as a multi-tab workbook, and says so where routing
-# reads it. The builder is shared, so one broken edit breaks all five skills.
+# reads it. The builder is shared, so one broken edit breaks every skill.
 for f in skills/*/SKILL.md; do
   dir=$(basename "$(dirname "$f")")
   sed -n 's/^description: //p' "$f" | grep -q 'multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question' \

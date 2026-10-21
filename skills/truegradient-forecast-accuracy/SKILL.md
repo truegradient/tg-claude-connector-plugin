@@ -474,6 +474,7 @@ headline with its window, family and lag, and the largest caveat.
 - a forward-looking forecast value → **truegradient-forecast-lookup**
 - ranking by risk, prioritisation → **truegradient-forecast-risk**
 - comparing two forecast families → **truegradient-forecast-change**
+- this year against last year, growth, YoY → **truegradient-year-on-year**
 - inventory, supply, stock or reorder → **truegradient-supply-inventory**
 - pricing, markdown or promotion → out of scope, say so
 

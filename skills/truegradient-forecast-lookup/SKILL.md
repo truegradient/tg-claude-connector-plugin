@@ -242,6 +242,7 @@ Hand off rather than answering:
 - accuracy, error, bias, WAPE, MAPE → **truegradient-forecast-accuracy**
 - ranking by risk, "where to focus" → **truegradient-forecast-risk**
 - comparing two forecast families → **truegradient-forecast-change**
+- this year against last year, growth, YoY → **truegradient-year-on-year**
 
 Hand off to **truegradient-supply-inventory**:
 

@@ -405,6 +405,13 @@ These often compose. Read the supply side here and hand off the rest:
   fine — keep the two rankings clearly labelled, they answer different questions.
 - **"What's the forecast for November?"** → **truegradient-forecast-lookup**, from
   `Final DA Data`. Do not read a forecast value off `Supply Plan`.
+- **"Are sales up on last year?"** → **truegradient-year-on-year**, from
+  `Final DA Data`. Demand growth is not a supply measure.
+- **"Is stock up on last year?"** → cannot be answered. `DOI Details` is today's
+  snapshot and `Supply Plan` starts at the current period: its first period
+  equals Σ `Stock_On_Hand`. Neither holds last year's stock position. Say so,
+  never estimate one, and offer today's position and cover here or sales versus
+  last year in **truegradient-year-on-year**.
 - Note that `Final DA Data*` also appear in this module. Route on the
   **question**, not the module.
 

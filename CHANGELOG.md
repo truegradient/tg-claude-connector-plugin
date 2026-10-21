@@ -1,5 +1,74 @@
 # Changelog
 
+## 1.1.0 — 2026-10-21
+
+A sixth skill, `truegradient-year-on-year`, compares demand with the same months
+a year earlier: actual sales against last year's sales, and any named forecast
+family against last year's sales. It is a minor release because it lets Claude
+answer questions it previously had no procedure for. No existing metric
+definition changed.
+
+### Added
+
+- **`skills/truegradient-year-on-year/`.** Calendar-month pairing (never "twelve
+  columns back"), one last-year basis per figure (`Sales` 12 months earlier by
+  default; `LY Sales` cross-checked and never mixed in), growth as a ratio of
+  sums, a ranking by absolute change, a like-for-like view, and plan versus last
+  year labelled as what the plan assumes, with a realism check against actual
+  trend.
+- **`METRICS.md` §9**: pairing, formulas, like-for-like, plan versus last year,
+  the required sensitivities (§9d-bis), price/mix and presentation.
+- **`WORKBOOK-SPEC.md` §2Y**: blueprints N (actual growth), O (plan versus last
+  year) and P (full-year outlook), plus a `Sensitivity` tab.
+- **`TEST-CHECKLIST.md` Group 12**: T56–T70.
+- A hand-off line in every other skill's boundaries.
+
+### Rules the live acceptance pass added before release
+
+Fresh readers ran the skill against a live workspace. Every figure matched an
+independently measured answer key, and the following gaps were closed:
+
+- **Never use the stored `<date> YoY Perc Change`.** Measured row by row, it is
+  `(Locked ML Forecast Lag_1 − LY Sales) / LY Sales × 100`, on forecast months
+  only. It is the lock against last year, not `Forecast` and not actuals.
+- **The month containing the experiment's `createdAt` is held out as partial**,
+  as well as the current month. An experiment created on the 23rd carried a
+  `Sales` column dated the 31st.
+- **Stale data.** Backward-looking words (year to date, a named month, last 12
+  months) anchor on the last month with `Sales`, stated in the first sentence.
+  Forward-looking words ("next quarter") anchor on today whenever the forecast
+  covers the period. A first draft anchored both on the data date, and a reader
+  answered "next quarter" with the wrong quarter. Retested correct.
+- **Placeholder rows.** When `UNKNOWN` rows carry more than a quarter of the
+  change, growth excluding them is given beside the total.
+- **Single-row outliers.** A trigger (a month above 1.5x the median) and a test
+  (one row ≥ 25% of the month and ≥ 10x its neighbours), using `sort_by`. The
+  headline keeps the row, a labelled "excluding one row" sensitivity is given,
+  and no cause is asserted.
+- **The realism check compares total with total first** and names every other
+  basis it uses.
+- The `LY Sales` cross-check names the months it covered, and says so when they
+  fall outside the window. `Imputation Flag` is measured with one grouped call
+  and never summed. Use `Lower`/`Upper Bound` first and `P10`/`P90` only when
+  the bounds are absent. A named segment is matched against experiment labels
+  first, trimmed.
+- **Unanswerable comparisons are routed honestly.** "Stock versus last year":
+  no dataset holds last year's stock position, and the supply skill now says so.
+  "Forecast versus last year's forecast": the last-year side is always actual
+  sales.
+
+### Changed
+
+- `package.sh` counts skills from the repo instead of expecting exactly five.
+- Manifests and README: six skills, version 1.1.0.
+- `TOOL-GUIDE.md`: the example leaked storage path no longer names a workspace.
+
+### Still unvalidated
+
+Tested on one demo company only, with two experiments. A populated
+`Consensus Forecast`, a fiscal-year workspace, `Final DA Data Value` growth and
+the Excel output were not exercised live.
+
 ## 1.0.2 — 2026-10-06
 
 Every skill can now answer as a multi-tab Excel workbook: Read Me, Summary,

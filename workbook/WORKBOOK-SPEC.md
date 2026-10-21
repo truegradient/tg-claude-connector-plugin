@@ -1,12 +1,12 @@
 # TrueGradient workbook: blueprints and spec format
 
-Read this when any of the five skills answers with an Excel workbook (see
+Read this when any skill answers with an Excel workbook (see
 "Excel workbook output" in that skill's `SKILL.md`). It covers:
 
 1. The fixed tab skeleton every workbook has
 2. Blueprints: which tabs to build for which question, per skill
    (2S supply and inventory, 2L forecast lookup, 2A accuracy and bias,
-   2R forecast risk, 2C forecast change)
+   2R forecast risk, 2C forecast change, 2Y year on year)
 3. Column conventions, suggested actions and check/flag rules
 4. The JSON spec `build_workbook.py` reads
 5. Build, verify, deliver
@@ -342,6 +342,76 @@ exactly but not explained, beyond any planner comment quoted. Say whether
 `SnOP Comments` exists and whether it holds any text. If the user asked about
 a prior cycle, say those experiments are not available to read. A comparison
 of two lags of one lock family is titled a horizon comparison, not a change.
+
+## 2Y. Year on year (`truegradient-year-on-year`)
+
+This year against the same calendar months a year earlier, one last-year basis
+(`Sales` 12 months earlier by default, or `LY Sales`), the same months on both
+sides. Every growth figure is a **live ratio of sums**, so it follows filters.
+
+### N. Actual growth ("versus last year", YTD, last 12 months, by group)
+- **Main tab** `YoY by month`: one row per group × this-year month in the
+  window. Columns:
+  - `Group` (the grain asked for; one "All" group for a portfolio figure)
+  - `Month` (date, this year) and `Same month last year` (date)
+  - `This year` = Σ `<M> Sales` (units)
+  - `Last year` = Σ `<M − 12> Sales`, or Σ `<M> LY Sales` when that is the
+    basis (units; the basis in the Source line)
+  - `Change` = `={This year}-{Last year}` (`delta`)
+  - `Growth` = `=IF({Last year}=0,"",({This year}-{Last year})/ABS({Last year}))`,
+    type `pct_signed`, `"total": "formula"`. The totals row is the window's
+    growth, and it is a ratio of totals, never an average of rows
+  - Check / flag: `No sales a year earlier: growth undefined`; `Unmapped master
+    data (UNKNOWN): kept in the total`
+  - Totals across months are legitimate here, because both sides cover the
+    same months: the totals row is the window total.
+- **Only window months go on this tab.** The current month and any month
+  missing a side go to `Excluded months`, so no total can include them.
+- **Summary** (source `YoY by month`):
+  - a `Month` block, the trend: `values` `This year`, `Last year`, `Change`;
+    `ratios` `Growth` `=({This year}-{Last year})/ABS({Last year})`
+    (`pct_signed`); `order` = months ascending
+  - a `Group` block with the same values and ratio, ranked by `Change`
+    (absolute change), with a block `note` saying so. The placeholder group
+    stays in as its own line.
+- **`Like-for-like`** tab: the same columns as the main tab, from the per-month
+  filtered reads (rows with sales in both months), plus `Rows compared`
+  (`int`, `"total": "sum"`). The Source line states the definition.
+- **`Excluded months`** tab: `Month`, `Reason` (current month, month-to-date /
+  experiment created in this month, month-to-date / no Sales this year / no last-year column on the chosen basis / beyond the
+  last Sales month). Always present.
+
+### O. Plan versus last year ("what growth does the forecast imply")
+- **Main tab** `Plan vs last year`: one row per group × plan month. Columns:
+  `Group`, `Month`, `Same month last year`, `Last year actual` (units), then
+  one pair per named family: `<family>` (units, the family and lag in the
+  header) and `<family> vs LY` =
+  `=IF({Last year actual}=0,"",({<family>}-{Last year actual})/ABS({Last year actual}))`
+  (`pct_signed`, `"total": "formula"`). With an interval: `Lower Bound`,
+  `Upper Bound` (units, summed) and their two growth columns, the Source line
+  saying the band belongs to `ML Forecast` and summed bounds are wider than a
+  combined interval.
+- Read Me says, as its first caveat, that plan growth is what the plan assumes,
+  not a measured growth, and gives the realism check: the plan's growth beside
+  the most recent actual growth, both windows named, as judgement.
+- **Summary**: a `Month` block and a `Group` block with a ratio per family.
+
+### P. Full-year outlook ("where do we land versus last year")
+- Main tab as N, with a `This-year source` text column on every row (`Sales`
+  or the named forecast family) and the Source line giving the split
+  ("8 months Sales + 4 months Forecast"). One forecast family only.
+- Add a Summary block grouped by `This-year source`, so actual and plan
+  contributions are visible separately.
+
+Read Me carries the formula in words (`Growth = (this year − last year) /
+last year, on the same months`), both windows exactly, the basis and the
+`LY Sales` cross-check result, the item-list limitation (last year counts only
+items this experiment carries), and that attributes such as `AB_Class` are
+today's classification applied to both years. Units and value: separate tabs,
+never one ratio across them. When a sensitivity was required (METRICS §9d-bis),
+add a `Sensitivity` tab with one row per variant (total, excluding placeholder
+rows, excluding one row): `This year`, `Last year`, `Change` and `Growth` as a
+live ratio, plus the excluded row described in numbers on the Read Me.
 
 ## 3. Column conventions
 

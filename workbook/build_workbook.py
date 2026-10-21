@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build a TrueGradient planning workbook (any of the five skills) from a JSON spec.
+Build a TrueGradient planning workbook (any of the skills) from a JSON spec.
 
     python build_workbook.py spec.json out.xlsx
 

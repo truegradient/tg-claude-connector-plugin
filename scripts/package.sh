@@ -55,8 +55,12 @@ printf '%s\n' "$listing" | grep -E '__MACOSX|\.DS_Store' >/dev/null \
 for d in references skills workbook; do
   printf '%s\n' "$listing" | grep -E " $d/" >/dev/null || reject "$d/ is missing."
 done
+# Every skill in the repo must reach the archive; a dropped one fails silently
+# for whoever installs it.
+n_repo=$(find skills -mindepth 2 -maxdepth 2 -name SKILL.md | wc -l | tr -d ' ')
 n_skills=$(printf '%s\n' "$listing" | grep -cE ' skills/[^/]+/SKILL\.md$')
-[ "$n_skills" -eq 5 ] || reject "expected 5 SKILL.md files at skills/*/, found $n_skills."
+[ "$n_skills" -eq "$n_repo" ] \
+  || reject "expected $n_repo SKILL.md files at skills/*/ (as in the repo), found $n_skills."
 
 printf '\n\033[32mBuilt\033[0m %s  (%s)\n\n' "$out" "$(du -h "$out" | cut -f1)"
 unzip -l "$out" | sed -n '4,$p' | grep -v '^ *0 ' | awk '{printf "  %8s  %s\n", $1, $4}'

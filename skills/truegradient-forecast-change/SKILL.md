@@ -263,6 +263,7 @@ no-history caveat.
 - accuracy against actuals → **truegradient-forecast-accuracy**
 - a single current value → **truegradient-forecast-lookup**
 - risk ranking → **truegradient-forecast-risk**
+- this year against last year, growth, YoY → **truegradient-year-on-year**
 - "who changed it" → **cannot be answered at all.** No authorship is recorded. Say
   so plainly rather than guessing from column names.
 

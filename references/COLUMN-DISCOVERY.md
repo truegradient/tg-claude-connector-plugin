@@ -173,6 +173,7 @@ Check the live list for each of these. Presence changes your approach:
 | `<date> Lower Bound` / `Upper Bound` / `P10`–`P99` | **must** be included with point forecasts | say no interval is available |
 | `<date> <lock family> Abs Error` | preferred error numerator — **must match the chosen family *and* lag** | use the netted fallback and say so |
 | `<date> Consensus Forecast` | the planner-agreed number; use it as the forecast side **only** for an explicit consensus question, labelled as not frozen (`METRICS.md` §1a) | say this workspace records no consensus forecast; never pass `Forecast` off as consensus |
+| `<date> YoY Perc Change` | **never use for a figure.** Measured as `(Locked ML Forecast Lag_1 − LY Sales) / LY Sales × 100` per row, forecast months only; a lock-vs-last-year ratio, not growth of `Forecast` or of actuals (`METRICS.md` §9b) | compute growth from sums |
 | a `Locked ...` family | **the basis for every metric** — classify per `LOCK-FAMILIES.md` | no accuracy can be measured — say so |
 | a `Lock ...` / `Multi_Lock ...` family | keep it **out** of metric calculations; readable on request | nothing to exclude |
 

@@ -615,6 +615,7 @@ caveat.
 - a single forecast value → **truegradient-forecast-lookup**
 - overall accuracy or bias trend → **truegradient-forecast-accuracy**
 - comparing two forecast families → **truegradient-forecast-change**
+- this year against last year, growth, YoY → **truegradient-year-on-year**
 - stockout risk, inventory cover, reorder, excess → **truegradient-supply-inventory**;
   that is inventory data, not forecast data
 

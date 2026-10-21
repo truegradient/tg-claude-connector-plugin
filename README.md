@@ -1,10 +1,10 @@
 # TrueGradient Planning Analysis — Claude Plugin
 
-Five skills that make Claude answer demand, supply and inventory questions from
+Six skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.0.2
+Version 1.1.0
 
 ---
 
@@ -30,7 +30,7 @@ per person.
 
 ---
 
-## The five skills
+## The six skills
 
 | Skill | Answers |
 |---|---|
@@ -38,6 +38,7 @@ per person.
 | `truegradient-forecast-accuracy` | "How accurate have we been? What's our bias? Which categories are worsening?" |
 | `truegradient-forecast-risk` | "Which items carry the most forecast risk? Where should planners focus?" |
 | `truegradient-forecast-change` | "What changed between the locked baseline and the current forecast?" |
+| `truegradient-year-on-year` | "How are we doing versus last year? What growth does next year's forecast imply?" |
 | `truegradient-supply-inventory` | "How does inventory look month on month? When do we run out? What should I reorder? Where's my excess?" |
 
 Claude picks the right one from your question. You can also name a skill directly.
@@ -123,8 +124,8 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 ### 1. Upload the plugin
 
 1. Claude → **Organization settings → Plugins → Upload a file**
-2. Select `tg-claude-connector-plugin-1.0.2.zip`, as built by `scripts/package.sh`
-3. Confirm **five skills** are detected
+2. Select `tg-claude-connector-plugin-1.1.0.zip`, as built by `scripts/package.sh`
+3. Confirm **six skills** are detected
 4. Choose an availability level:
 
 | Level | Behaviour | Recommendation |
@@ -188,6 +189,8 @@ Who am I in TrueGradient?
 What TrueGradient experiments can I analyse?
 What's the final forecast for <a real SKU or category> next month?
 How accurate has our forecast been over the last few months?
+How are sales tracking versus last year, by category?
+What growth does next year's forecast imply against what we sold?
 Which categories carry the most forecast risk?
 What changed between the locked baseline and the current forecast?
 How does inventory for <a real SKU> look month on month?
@@ -370,7 +373,7 @@ people at that asset rather than at the repo's ZIP link.
 
 `package.sh` runs `verify-plugin.sh` first and then refuses to emit an archive
 that has a wrapper directory, is missing `references/`, `skills/` or `workbook/`, does not
-carry exactly five `skills/*/SKILL.md` files, or contains `__MACOSX` /
+carry every `skills/*/SKILL.md` file in the repo, or contains `__MACOSX` /
 `.DS_Store` entries. Local-only files (`.claude/`, `.gitignore`, `.git/`) are
 excluded.
 
@@ -428,7 +431,7 @@ workspace. Any test marked **Fail (critical)** blocks promotion.
 LICENSE                        proprietary; grants installation and use
 README.md                      this file
 CHANGELOG.md
-TEST-CHECKLIST.md              61 acceptance tests (11 groups)
+TEST-CHECKLIST.md              76 acceptance tests (12 groups)
 scripts/verify-plugin.sh       pre-push checks: versions, descriptions,
                                cross-references, rules that must not regress
 scripts/package.sh             builds the upload archive; refuses a bad layout
@@ -447,6 +450,7 @@ skills/
   truegradient-forecast-risk/SKILL.md
   truegradient-forecast-change/SKILL.md
   truegradient-supply-inventory/SKILL.md
+  truegradient-year-on-year/SKILL.md
 workbook/
   build_workbook.py            builds every skill's multi-tab Excel workbook
                                from a JSON spec; enforces the data rules

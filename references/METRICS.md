@@ -397,3 +397,96 @@ RMSE           = √( (1/n) · Σ (A − F)² )      in units; penalises large m
 - Always pair a metric with its grain and its period. A bare "accuracy is 34%" is
   not an answer — "34.2% for Category X across the 5 eligible months
   2026-03-31 to 2026-07-31" is.
+
+---
+
+## 9. Year on year
+
+Used by `truegradient-year-on-year`. Pure arithmetic on sums; no accuracy
+involved.
+
+### 9a. Pairing
+
+```
+Key every dated column by its YYYY-MM.
+this-year month M  ↔  last-year month = YYYY-MM of (M − 1 year)
+  2026-02-28 ↔ 2025-02-28      2025-02-28 ↔ 2024-02-29
+Never pair by position ("twelve columns back"): ragged coverage shifts every pair.
+```
+
+Last-year basis, one per figure:
+
+| Basis | When | Say |
+|---|---|---|
+| `<M − 12> Sales` | default; same definition as the this-year actual | "Sales 12 months earlier" |
+| `<M> LY Sales` | only when `Sales` 12 months earlier is absent for the whole window and `LY Sales` covers it | "LY Sales, a stored column whose definition the connector cannot verify" |
+
+Where both exist, compare `Σ LY Sales(M)` with `Σ Sales(M − 12)` month by month
+and report whether they agree (within 0.5%). A disagreement is reported, not
+explained.
+
+### 9b. Formulas
+
+```
+this      = Σ over the window's months of Σ this-year column
+last      = Σ over the SAME months, shifted one year, of Σ last-year column
+change    = this − last
+growth %  = change / |last| × 100            undefined when last = 0
+```
+
+- **Ratio of sums.** Portfolio growth is the formula on portfolio sums, never an
+  average of group or monthly growth rates. Two groups at +50% (on 10 units) and
+  +1% (on 10,000 units) pool to +1.05%, not +25.5%.
+- **Same months both sides.** A month missing on either side leaves the window on
+  both sides.
+- **Incomplete months out** of actual growth: the current month, and the month
+  containing the experiment's `createdAt`. Both are month-to-date against a full month.
+- **Never use the stored `<M> YoY Perc Change`.** Verified live, it is
+  `(Locked ML Forecast Lag_1 − LY Sales) / LY Sales × 100` per row, on forecast
+  months only. That is the lock, not `Forecast` or actuals, and a per-row
+  percentage cannot be averaged into a group figure.
+- **Rank by absolute change**, show % beside it.
+
+### 9c. Like-for-like
+
+Per month, rows with `Sales > 0` in both that month and the same month a year
+earlier. `non-comparable change = total change − like-for-like change`. State the
+definition with the figure; it is row-level, so an item that moved location
+counts as lost at one and new at the other.
+
+### 9d. Plan versus last year
+
+```
+plan growth % (family F) = (Σ F(M) − Σ Sales(M − 12)) / |Σ Sales(M − 12)| × 100
+```
+
+A statement about what the plan assumes, never a measured growth. One figure per
+named family, all against the same base; never blended. Only for months with no
+`Sales` yet.
+
+A **full-year outlook** composes completed months of `Sales` with remaining months
+of **one** named forecast family, against the full prior year. Name the split
+("8 months Sales + 4 months Forecast").
+
+### 9d-bis. Sensitivities that sit beside the headline
+
+Neither replaces the total; both are labelled.
+
+- **Excluding placeholder rows** (`UNKNOWN` …): required when they carry more than
+  a quarter of the absolute change.
+- **Excluding one row**: required when a single row holds at least 25% of a
+  window month's total and at least 10x its own neighbouring months. Remove it from
+  both sides of the window.
+
+A plan-versus-actual realism check compares **total with total** first. Other
+bases are given only labelled, and only when they differ by more than 5 points.
+
+### 9e. Price and mix
+
+With unit growth `g_u` and value growth `g_v` on the same window and items:
+`implied price/mix change = (1 + g_v) / (1 + g_u) − 1`. Derived, mix included.
+
+### 9f. Presentation
+
+Growth to 1 decimal place with its sign (`+7.9%`, `−4.3%`), units whole. Always
+give both windows: "Jan–Jul 2026 vs Jan–Jul 2025".

@@ -145,7 +145,7 @@ the datasets you actually need (see the overflow section below).
   transfers when the file simply was not produced is a fabricated finding.
 - **Error bodies leak the storage path — never repeat one to the user.** That 502
   came back containing
-  `accounts/demo_<company-id>/data_bucket/inventory-optimization/.../stock_transfer_df.csv`.
+  `accounts/<company>_<company-id>/data_bucket/inventory-optimization/.../stock_transfer_df.csv`.
   The tool contract is that paths are never exposed, but failures breach it.
   Report the failure in plain words and drop the path, the bucket and the
   company id.
