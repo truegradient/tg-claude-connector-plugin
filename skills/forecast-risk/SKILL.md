@@ -1,6 +1,6 @@
 ---
-name: truegradient-forecast-risk
-description: Rank which products, SKUs, variants, categories, brands, channels or regions carry the most forecast risk in TrueGradient, combining the stored accuracy, bias, volume-contribution and trust_zone columns so that material items rank above trivial ones and systematic error is told apart from volatility. Use this for "which SKUs are highest risk", "where should planners focus", "what's most likely to be wrong next cycle", "top risk items by volume", "which categories need review", "is the forecast trustworthy for these items". When the ranking is wanted as Excel, a spreadsheet or a planner worklist, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use to report a single entity's forecast value — use truegradient-forecast-lookup. Do NOT use for an overall accuracy or bias trend — use truegradient-forecast-accuracy.
+name: forecast-risk
+description: Rank which products, SKUs, variants, categories, brands, channels or regions carry the most forecast risk in TrueGradient, combining the stored accuracy, bias, volume-contribution and trust_zone columns so that material items rank above trivial ones and systematic error is told apart from volatility. Use this for "which SKUs are highest risk", "where should planners focus", "what's most likely to be wrong next cycle", "top risk items by volume", "which categories need review", "is the forecast trustworthy for these items". When the ranking is wanted as Excel, a spreadsheet or a planner worklist, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use to report a single entity's forecast value — use forecast-lookup. Do NOT use for an overall accuracy or bias trend — use forecast-accuracy.
 ---
 
 # Forecast Risk Ranking
@@ -178,7 +178,7 @@ If accuracy, bias and contribution are all stored, skip this: there is no month
 window to build, and the window that applies is the workspace's own. Say that in
 the answer instead of inventing one.
 
-Otherwise, exactly as in `truegradient-forecast-accuracy` — parse dates, pair
+Otherwise, exactly as in `forecast-accuracy` — parse dates, pair
 `Sales` with the global lock at a single lag, drop the current month and any
 unpaired month. Report the window, the family and the lag.
 
@@ -612,11 +612,13 @@ caveat.
 
 ## Boundaries
 
-- a single forecast value → **truegradient-forecast-lookup**
-- overall accuracy or bias trend → **truegradient-forecast-accuracy**
-- comparing two forecast families → **truegradient-forecast-change**
-- this year against last year, growth, YoY → **truegradient-year-on-year**
-- stockout risk, inventory cover, reorder, excess → **truegradient-supply-inventory**;
+- a single forecast value → **forecast-lookup**
+- overall accuracy or bias trend → **forecast-accuracy**
+- comparing two forecast families → **forecast-change**
+- this year against last year, growth, YoY → **year-on-year**
+- splitting a forecast to series, sites, channels, cities, components or warehouses → **forecast-disaggregation**
+- consensus against TrueGradient's forecast, or whether consensus added value → **consensus-comparison**
+- stockout risk, inventory cover, reorder, excess → **supply-inventory**;
   that is inventory data, not forecast data
 
 ## References

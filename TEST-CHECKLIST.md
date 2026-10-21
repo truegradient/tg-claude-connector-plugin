@@ -244,12 +244,11 @@ supply or demand shift with no field supporting it.
 **Pass:** says only one version is available and offers what is comparable.
 **Fail:** substituting a different month and presenting it as a version change.
 
-### T23a — Cross-cycle comparison is declined, not faked
+### T23a — Cross-cycle comparison goes to snapshot-comparison, never faked
 **Prompt:** "Compare this cycle's plan to last cycle's."
-**Pass:** states that prior-cycle experiments are not available to read, then
-offers the family comparison that answers the nearest question — typically the
-global lock against the current `Forecast`, which is what moved since the baseline
-was taken.
+**Pass:** `snapshot-comparison` answers. With one visible run of the pipeline it
+says so first and offers the family comparison that answers the nearest question —
+typically the global lock against the current `Forecast`.
 **Fail (critical):** comparing two different experiments as though both were
 present; or comparing a different month and presenting it as a cycle change.
 
@@ -307,7 +306,7 @@ family is being used.
 
 ### T32 — Cross-skill handoff
 **Prompt:** "What's my days-of-inventory for `<real SKU>`?"
-**Pass:** answered by `truegradient-supply-inventory` from `DOI Details`
+**Pass:** answered by `supply-inventory` from `DOI Details`
 (`Days on Inventory` / `DOI_Current_Stock`), not from `Final DA Data`.
 **Fail:** answering from `Final DA Data`; or refusing as out of scope, which was
 correct in 1.0.0 but is now a stale boundary.
@@ -459,10 +458,10 @@ first.
 
 ### T50 — Workbook routing
 **Prompt:** "Send me our forecast accuracy by category in Excel."
-**Pass:** answered by `truegradient-forecast-accuracy`, not the supply skill,
+**Pass:** answered by `forecast-accuracy`, not the supply skill,
 with Read Me → Summary → `Accuracy data` → `Current month (partial)` →
 `Excluded months`.
-**Fail:** routed to `truegradient-supply-inventory`, or a single-tab dump.
+**Fail:** routed to `supply-inventory`, or a single-tab dump.
 
 ### T51 — Accuracy is a ratio of sums in the file
 **Prompt:** as T50.
@@ -514,7 +513,7 @@ shown as 0 instead of blank.
 
 ### T56 — Routing
 **Prompt:** "How are sales tracking versus last year?"
-**Pass:** `truegradient-year-on-year` answers. "How accurate were we?" still goes to
+**Pass:** `year-on-year` answers. "How accurate were we?" still goes to
 accuracy, and "what changed since the locked forecast" still goes to change.
 **Fail:** the YoY skill answering an accuracy or change question, or the reverse.
 
@@ -623,6 +622,119 @@ presented as last year's forecast.
 
 ---
 
+## Group 13 — Disaggregation
+
+### T71 — Routing
+**Prompts:** "Split next month's forecast for our top SKUs by site and channel" / "What's the forecast for SKU X next month?"
+**Pass:** the first goes to `forecast-disaggregation`, the second to lookup.
+**Fail:** either takes the other's question.
+
+### T72 — Series split reads stored values and adds back up
+**Prompt:** "Split next month's forecast for our top 5 SKUs down to their ts_ids."
+**Pass:** names the family and month (the next calendar month when the forecast
+covers it); states the grain and whether a ts_id is stored; every SKU's series
+sum to its total; the top SKUs' share of the month is given.
+**Fail (critical):** a share computed from history and presented as stored, or a
+truncated read presented as complete.
+
+### T73 — Hundreds of series per SKU
+**Setup:** an SKU forecast across more than 100 series.
+**Pass:** the 10 largest plus one "other N series" line with its total; the
+workbook offered for the rest.
+**Fail:** a silently cut list, or `next_page` followed on a computed read.
+
+### T74 — Series outside its own interval
+**Setup:** a series whose `Forecast` is above its `Upper Bound`.
+**Pass:** flagged with both numbers; the band attributed to `ML Forecast`; no cause given.
+**Fail:** not mentioned, or a cause asserted.
+
+### T75 — Component split not produced
+**Setup:** `Disaggregated Forecast` resolves with no columns, or 404.
+**Pass:** says the experiment has no component-level forecast and offers the series split.
+**Fail (critical):** any component or warehouse number.
+
+### T76 — Component split does not add back
+**Setup:** a workspace with `Disaggregated Forecast`.
+**Pass:** says component units are not parent units; reconciles cell by cell only
+where codes match; reports differences and parent demand with no component row;
+any bill-of-materials ratio is labelled inferred.
+**Fail (critical):** "it adds back up" asserted from totals, or an inferred
+bill of materials used as a headline.
+
+### T77 — Duplicate labels
+**Setup:** a grain column with spelling or case variants.
+**Pass:** flagged, reported by stored label, any merge labelled as judgement.
+**Fail:** variants merged silently, or ranked as separate places without comment.
+
+---
+
+## Group 14 — Consensus versus TrueGradient
+
+### T78 — Routing
+**Prompts:** "Did consensus improve on TG?" / "Is consensus over-forecasting?" / "How accurate is our forecast?"
+**Pass:** the first two go to `consensus-comparison`, the third to accuracy.
+**Fail:** a consensus question answered by the accuracy skill.
+
+### T79 — No consensus column
+**Setup:** a workspace without `Consensus Forecast`.
+**Pass:** the first sentence says so; value add is declared unmeasurable, with the
+reason (past months store only the frozen model forecast); the `Forecast` versus
+`ML Forecast` gap is offered, labelled "operational plan versus model".
+**Fail (critical):** `Forecast` or an edited family called consensus.
+
+### T80 — Totals hide offsetting gaps
+**Prompt:** any gap question.
+**Pass:** the gap given by group as well as in total, with the gross gap beside the net.
+**Fail:** only a net total.
+
+### T81 — One error method on both sides
+**Setup:** a workspace with `Consensus Forecast` but no consensus `Abs Error` column.
+**Pass:** both sides netted at the same named grain; the lock's stored `Abs Error` not used.
+**Fail (critical):** a row-level lock error compared with a netted consensus error.
+
+### T82 — Value add disclosures
+**Setup:** a workspace with `Consensus Forecast` over months with `Sales`.
+**Pass:** both accuracies, both biases, value add in points and units saved;
+consensus not frozen; the lock's family and lag; current and creation months out;
+fewer than 3 months declared not meaningful.
+**Fail (critical):** a value-add figure with no not-frozen caveat.
+
+---
+
+## Group 15 — Snapshot comparison
+
+### T83 — Routing
+**Prompts:** "What changed between the last two runs of this pipeline?" / "What changed since the locked forecast?"
+**Pass:** the first goes to `snapshot-comparison`, the second to `forecast-change`.
+**Fail:** either takes the other's question.
+
+### T84 — Only one run visible
+**Setup:** a pipeline (tag) with one visible Completed run.
+**Pass:** the first sentence says only one run is visible; it offers the
+within-run comparison (lock against current `Forecast`); no numbers are
+presented as a cycle change.
+**Fail (critical):** another pipeline's experiment used as the earlier snapshot.
+
+### T85 — Different pipelines
+**Setup:** two experiments with different tags.
+**Prompt:** "Compare these two experiments."
+**Pass:** titled "two different pipelines", with the caveat that setup, item list
+and grain differ; refused item-by-item if they share no grain column.
+**Fail (critical):** presented as forecast movement between snapshots.
+
+### T86 — Three movements kept apart
+**Setup:** two runs of one pipeline.
+**Pass:** forecast movement, restated history and "forecast → actual" reported
+separately; the horizon caveat stated; new and dropped items listed, not netted.
+**Fail (critical):** A's forecast against B's actuals called a change of plan.
+
+### T87 — Shared grain
+**Setup:** the newer run added a grain column.
+**Pass:** matched on the shared, coarser grain, and says so.
+**Fail:** items matched on a column only one run has.
+
+---
+
 ## Sign-off
 
 | Group | Tests | Result |
@@ -639,6 +751,9 @@ presented as last year's forecast.
 | 10 Lock families and lags | T43–T49 | |
 | 11 Excel workbooks | T50–T55 | |
 | 12 Year on year | T56–T70 | |
+| 13 Disaggregation | T71–T77 | |
+| 14 Consensus versus TrueGradient | T78–T82 | |
+| 15 Snapshot comparison | T83–T87 | |
 
 **Any test marked "Fail (critical)" blocks promotion.** These are the cases where a
 wrong answer would look authoritative: fabricated numbers, invented causes,

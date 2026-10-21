@@ -6,7 +6,8 @@ Read this when any skill answers with an Excel workbook (see
 1. The fixed tab skeleton every workbook has
 2. Blueprints: which tabs to build for which question, per skill
    (2S supply and inventory, 2L forecast lookup, 2A accuracy and bias,
-   2R forecast risk, 2C forecast change, 2Y year on year)
+   2R forecast risk, 2C forecast change, 2Y year on year,
+   2D disaggregation, 2V consensus versus TrueGradient, 2X snapshot comparison)
 3. Column conventions, suggested actions and check/flag rules
 4. The JSON spec `build_workbook.py` reads
 5. Build, verify, deliver
@@ -43,7 +44,7 @@ check was expected to find something; the builder writes the `empty_note`
 Pick the row that matches the question. If the question spans two, merge them:
 one main tab per question, shared Read Me and Summary.
 
-## 2S. Supply and inventory (`truegradient-supply-inventory`)
+## 2S. Supply and inventory (`supply-inventory`)
 
 ### A. Reorder plan for a window ("what should we reorder Sep–Nov", "reorder list")
 - **Main tab** `Reorder <window>`: every entity with `Reorder Plan` > 0 in any
@@ -124,7 +125,7 @@ outside source disagree on. If a blueprint needs a field that is absent from the
 live column list, drop the column and add a caveat naming the field, never a
 column of zeros.
 
-## 2L. Forecast lookup (`truegradient-forecast-lookup`)
+## 2L. Forecast lookup (`forecast-lookup`)
 
 A workbook when the lookup covers many entities or many periods ("forecast for
 every SKU in Snacks for Q4", "actuals vs forecast by region, last 6 months").
@@ -170,7 +171,7 @@ Read Me must name the forecast family (and the lag, for a lock family), say
 whose interval the bounds are, carry the archived-fallback caveat first if the
 roster used it, and list entities that were not found with the values offered.
 
-## 2A. Accuracy and bias (`truegradient-forecast-accuracy`)
+## 2A. Accuracy and bias (`forecast-accuracy`)
 
 Every figure is on the global lock (`<date> Locked ML Forecast Lag_N`) against
 `<date> Sales`, one lag, eligible months only. The workbook is laid out so that
@@ -235,7 +236,7 @@ excluded month and why, the numerator basis, that accuracy can be negative
 (error above actuals), and "not yet meaningful" when fewer than 3 months are
 eligible. Asked for MAPE, MAE or RMSE: say they cannot be recovered from sums.
 
-## 2R. Forecast risk (`truegradient-forecast-risk`)
+## 2R. Forecast risk (`forecast-risk`)
 
 The workspace's stored `trust_zone` is the classification. The workbook
 arranges it and never adds one. Zones are quoted in the stored spelling. A
@@ -311,7 +312,7 @@ Read Me carries: what each column is (stored or derived), that the thresholds
 behind the zones are configured in TrueGradient and not readable, the
 contribution window (3 months) against the accuracy window, and rows read.
 
-## 2C. Forecast change (`truegradient-forecast-change`)
+## 2C. Forecast change (`forecast-change`)
 
 Two column families, one experiment, the **same target month**. Never two
 months, never two experiments, never units against value.
@@ -340,10 +341,10 @@ Read Me, first caveat, always: TrueGradient records no forecast version
 history, edit authorship or reason codes, so these changes are measured
 exactly but not explained, beyond any planner comment quoted. Say whether
 `SnOP Comments` exists and whether it holds any text. If the user asked about
-a prior cycle, say those experiments are not available to read. A comparison
+a prior cycle, that is blueprint U (§2X), not this one. A comparison
 of two lags of one lock family is titled a horizon comparison, not a change.
 
-## 2Y. Year on year (`truegradient-year-on-year`)
+## 2Y. Year on year (`year-on-year`)
 
 This year against the same calendar months a year earlier, one last-year basis
 (`Sales` 12 months earlier by default, or `LY Sales`), the same months on both
@@ -412,6 +413,107 @@ never one ratio across them. When a sensitivity was required (METRICS §9d-bis),
 add a `Sensitivity` tab with one row per variant (total, excluding placeholder
 rows, excluding one row): `This year`, `Last year`, `Change` and `Growth` as a
 live ratio, plus the excluded row described in numbers on the Read Me.
+
+## 2D. Disaggregation (`forecast-disaggregation`)
+
+One family, one month. Stored values only: no share is computed from history
+unless the user supplied the number to push down, and then every derived cell is
+labelled.
+
+### Q. Series split ("split our top SKUs to their ts_ids / sites / cities")
+- **Main tab** `Series <month>`: one row per series of the top SKUs, every
+  series, not only the ten shown in chat. Columns: SKU code and descriptor; every
+  grain column; `ts_id` (stored, when a dataset carries one); `<family>` (units,
+  family and month in the header); `ML Forecast`, `Lower Bound`, `Upper Bound`
+  (units); `SKU total` (units, no total: the SKU's step-5 figure written on each
+  of its rows); `Share of SKU` = `=IF({SKU total}=0,"",{<family>}/{SKU total})`
+  (`pct`, no total); Check / flag. (`{Column}` is always the same row's cell, so a
+  share needs its parent total on the row; a `SUMIFS` over `{…}` would compare the
+  row with itself.) Rows ordered by SKU rank, then by value
+  descending.
+- **Summary**: a `SKU` block (values `<family>`, rank order, with a block note
+  giving the top SKUs' share of the portfolio month), and a block by one grain
+  column (platform, channel, region) with `<family>` summed.
+- **Exceptions**: `Outside interval` (series whose `<family>` is below `Lower
+  Bound` or above `Upper Bound`; the Source line says the band is `ML
+  Forecast`'s), `Unmapped or duplicate labels` (placeholder locations, and
+  labels differing only in spelling or case, side by side, never merged), each
+  included even when empty.
+- **Check / flag**: `Outside its own interval: a planner adjustment, reason not
+  recorded`; `Unmapped location: kept in the totals`; `Forecast is 0`.
+
+Read Me: the grain, whether a ts_id is stored, how top SKUs were chosen, the
+add-back result per SKU, and the top SKUs' share of the month.
+
+### R. Component split ("down to component and warehouse")
+- **Main tab** `Components <month>`: one row per component × warehouse (×
+  channel × region where present). Columns: component code and descriptor;
+  `Warehouse`; channel; region; `Disaggregated` (units, rounded after summing);
+  `Component total` (units, no total, written on each row); `Share of component`
+  = `=IF({Component total}=0,"",{Disaggregated}/{Component total})` (`pct`, no
+  total).
+- **Summary**: a `Component` block and a `Warehouse` block, both summing
+  `Disaggregated`.
+- **`Does not add back`** tab: one row per component × channel × region cell
+  where a parent SKU shares the component's code. Columns: `Parent <family>`
+  (units), `Component` (units), `Difference` = `={Component}-{Parent <family>}`
+  (`delta`); then parent demand with no component row, with its units and
+  "not disaggregated". Included even when empty.
+- Read Me, first caveat: component units are not parent units; bundles expand
+  into components; the connector exposes no bill of materials, so differences
+  are reported, not explained. Also which parent family the components matched,
+  and how that was checked.
+
+## 2V. Consensus versus TrueGradient (`consensus-comparison`)
+
+Both sides scored with one error method at one grain; the Read Me states both.
+With no consensus column, every tab is titled "operational plan versus model".
+
+### S. Value add ("did consensus improve on TG")
+- **Main tab** `Value add`: one row per group × value-add month. Columns:
+  group; `Month` (date); `Sales`, `Consensus`, `TG (<lock family, lag>)`
+  (units); `Error consensus`, `Error TG` (units; the method and grain in the
+  Source line); `Accuracy consensus` = `=IF({Sales}=0,"",1-{Error consensus}/{Sales})`
+  and `Accuracy TG` likewise (`pct`, `"total": "formula"`); `Value add (pts)` =
+  `={Accuracy consensus}-{Accuracy TG}` (`pct_signed`, `"total": "formula"`);
+  `Units saved` = `={Error TG}-{Error consensus}` (`delta`); Check / flag.
+- **Summary**: a `Group` block ranked by `Units saved`, with `ratios`
+  `Accuracy consensus` `=1-{Error consensus}/{Sales}`, `Accuracy TG`
+  `=1-{Error TG}/{Sales}` (`pct`), and a `Month` block with the same ratios.
+  Never an average of the row percentages.
+- **`Not measurable`** tab: months and groups missing a side, with the reason.
+
+### T. Gap ("how far apart for the coming months")
+- **Main tab** `Gap <months>`: one row per group × month. Columns: group;
+  `Month`; `Consensus` (or `Forecast (operational)` without consensus); `Model
+  (ML Forecast)`; `Gap` = `={Consensus}-{Model (ML Forecast)}` (`delta`);
+  `Gap %` = `=IF({Model (ML Forecast)}=0,"",({Consensus}-{Model (ML Forecast)})/ABS({Model (ML Forecast)}))`
+  (`pct_signed`, `"total": "formula"`); `Lower Bound`, `Upper Bound` (units).
+- **Summary**: a `Group` block ranked by absolute gap, with a block note giving
+  the gross gap beside the net gap.
+- **`Outside model band`** tab: groups or series where the consensus side is
+  outside `[Lower Bound, Upper Bound]`. Included even when empty.
+
+## 2X. Snapshot comparison (`snapshot-comparison`)
+
+Two runs of one pipeline, one family, the same target months, matched on the
+shared grain. Run A is the older, run B the newer.
+
+### U. What moved between two runs
+- **Main tab** `Moved <months>`: one row per matched item × month. Columns: the
+  shared grain columns; `Month` (date); `Run A: <label>` and `Run B: <label>`
+  (units, the family in the header); `Change` = `={Run B: …}-{Run A: …}`
+  (`delta`); `Change %` = `=IF({Run A: …}=0,"",({Run B: …}-{Run A: …})/ABS({Run A: …}))`
+  (`pct_signed`, `"total": "formula"`); Check / flag. Rows ordered by `|Change|`.
+- **Summary**: a `Month` block and a group block with `values` `Run A`, `Run B`,
+  `Change` and `ratios` `Change %` `={Change}/ABS({Run A: …})` (`pct_signed`).
+- **Exceptions**, each included even when empty: `New in B` (value in B, "not a
+  change from 0"), `Dropped from B` (value in A), `Restated history` (month,
+  Sales in A, Sales in B, difference), `Forecast to actual` (month, A's
+  forecast, B's Sales, difference, "A's error, not a change of plan").
+- Read Me, first caveats: both runs with tag, module and created date; the shared
+  grain and what was not matched; the newer run is closer to every month; no
+  version history, authorship or reason codes.
 
 ## 3. Column conventions
 

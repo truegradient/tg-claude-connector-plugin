@@ -1,5 +1,75 @@
 # Changelog
 
+## 1.2.0 — 2026-10-21
+
+Three new skills, and every skill renamed so it can be called directly. Minor
+release: each new skill answers questions the plugin previously declined or had
+no procedure for. No metric definition changed.
+
+### Renamed — every skill drops the `truegradient-` prefix
+
+`forecast-lookup`, `forecast-accuracy`, `forecast-risk`, `forecast-change`,
+`supply-inventory`, `year-on-year`, plus the three below. Typing `/year-on-year`
+invokes the skill directly; `/truegradient-forecast-plugin:year-on-year` still
+works and is the unambiguous form if another plugin uses the same name. The
+plugin's own name is unchanged, so installs and the directory listing are
+unaffected.
+
+### Added
+
+- **`forecast-disaggregation`.** Splits the top SKUs' forecast across their
+  stored series (the experiment's own grain, i.e. the default ts_ids), or down
+  to component SKU × warehouse from `Disaggregated Forecast` where produced.
+  Reads stored values only. The add-back is proved by counts (every series read,
+  one row each, nothing truncated), not by hand arithmetic. Flags series outside
+  their own interval and duplicate labels. Component units are not parent units:
+  measured 198,528 vs 121,849, because bundles expand into components. So it
+  reconciles cell by cell only where codes match, and reports, never explains,
+  the rest. `METRICS.md` §11, blueprints Q and R.
+- **`consensus-comparison`.** Consensus against TrueGradient's forecast: value
+  add on past months (against the frozen lock) and the gap for coming months
+  (against `ML Forecast`). Both sides are scored with one error method at one
+  grain, because `Σ|A−F| ≥ |ΣA−ΣF|` makes a mixed comparison favour consensus
+  by construction. The gap is given by group with the gross gap beside the net:
+  measured +1.2% net against 11.8% gross. With no consensus column it says so
+  first and offers "operational plan versus model", labelled. `METRICS.md` §10,
+  blueprints S and T.
+- **`snapshot-comparison`.** Two runs of one pipeline (same `tag` and module):
+  forecast movement, restated history and the older run's forecast-to-actual,
+  kept apart; matched on the shared grain; new and dropped items listed. It
+  proves a second run is visible first. In all three workspaces tested, every
+  pipeline had one, and the skill said so and offered the within-run
+  comparison. `METRICS.md` §12, blueprint U. It replaces the blanket "cross-cycle
+  comparison is not supported" rule in the change skill, the tool guide,
+  `METRICS.md` §5 and test T23a.
+- `COLUMN-DISCOVERY.md` step 4f: labels that differ only in spelling or case are
+  flagged, never merged silently (measured: 507 city labels in one workspace).
+- `TEST-CHECKLIST.md` Groups 13–15, T71–T87.
+
+### Fixed
+
+- **The accuracy skill compared consensus unfairly.** It scored consensus with
+  the netted error and set the lock's row-level error beside it, which favours
+  consensus by construction. Consensus accuracy questions now go to
+  `consensus-comparison`; `METRICS.md` §1a requires the same method on both
+  sides.
+- **`year-on-year`: a partial month as last year's base.** A plan month whose
+  base month is the current or creation month compared a full month with
+  month-to-date sales; measured: one pair read +265% and lifted a 12-month figure
+  by 7 points. Such pairs are now dropped or the window moved. Also checks that
+  future-dated `Sales` columns (observed: two years of zeros) are not actuals.
+
+### Tested live
+
+Three workspaces with different grains and layouts. YoY, accuracy, lookup and
+routing: all passed against independently measured answer keys. The new skills:
+series and component splits, "no component data", "no consensus" and "one run
+visible" all passed.
+
+**Still unvalidated, for want of data in any workspace tested:** consensus value
+add (no workspace has `Consensus Forecast`) and a real two-run snapshot
+comparison (no pipeline has two visible runs).
+
 ## 1.1.0 — 2026-10-21
 
 A sixth skill, `truegradient-year-on-year`, compares demand with the same months

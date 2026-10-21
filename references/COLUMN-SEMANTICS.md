@@ -18,6 +18,7 @@ find it rather than declaring the question unanswerable.
 | The question is about | Dataset |
 |---|---|
 | historical actuals, forecast variants, accuracy, deviation, quantiles, forecast risk — **in units** | `Final DA Data` |
+| the forecast split to **component SKU and warehouse** | `Disaggregated Forecast`, where produced: bare-date month columns, fractional units, component units not parent units (`METRICS.md` §11b) |
 | the same, but financial / value-first | `Final DA Data Value` |
 | current inventory state, reorder-now, stock risk, excess/dead stock, projected OOS timing | `DOI Details` |
 | how inventory **evolves** over the horizon, stockout timing, replenishment cadence — units | `Supply Plan` |

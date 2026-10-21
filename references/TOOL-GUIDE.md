@@ -124,9 +124,11 @@ stored accuracy. Call the roster unfiltered and route on the datasets an
 experiment actually resolves. A `count: 0` with a non-empty `raw_count` means the
 filter dropped everything — read `dropped_by` before reporting no data.
 
-The tool accepts multiple ids, but the skills work on **one experiment at a
-time**: prior-cycle experiments are usually absent from the live roster, so
-cross-cycle comparison is not supported. **Do not batch ids on wide experiments** —
+The tool accepts multiple ids, but the skills resolve **one experiment per
+call**. Only `snapshot-comparison` reads two experiments, two runs of one
+pipeline (same `tag`), and it resolves them one call each. Earlier runs are
+often absent from the live roster: observed live, every pipeline in three
+workspaces had a single visible run. **Do not batch ids on wide experiments** —
 two IBP experiments in one call produced a 138,506-character response that could
 not be returned. Resolve one experiment per call, and scope it with `tables` to
 the datasets you actually need (see the overflow section below).

@@ -16,13 +16,13 @@ Every experiment belongs to one module. Only these three exist:
 
 | Module | Covered by which skill? |
 |---|---|
-| `demand-planning` | the four `truegradient-forecast-*` skills — this document |
-| `inventory-optimization` | `truegradient-supply-inventory` — see `SUPPLY-DATA-CONTRACT.md` |
+| `demand-planning` | the `forecast-*`, `year-on-year` and `consensus-comparison` skills — this document |
+| `inventory-optimization` | `supply-inventory` — see `SUPPLY-DATA-CONTRACT.md` |
 | `pricing-promotion-optimization` | not covered — out of scope |
 
 This document describes the **forecast** datasets only. If a user asks a supply or
 inventory question (stock on hand, days of inventory, reorder points, stockout
-timing, excess, stock transfers), hand off to `truegradient-supply-inventory`.
+timing, excess, stock transfers), hand off to `supply-inventory`.
 Do not answer it from `Final DA Data`.
 
 If a user asks a pricing question (price elasticity, markdown, promotion ROI), say

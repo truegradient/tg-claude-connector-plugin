@@ -1,6 +1,6 @@
 ---
-name: truegradient-year-on-year
-description: Compare TrueGradient demand with the same months a year earlier — actual sales against last year's sales, and any forecast family (operational, ML, consensus, the locked plan) against last year's sales — by month, year to date, last twelve months or full-year outlook, in units or value. Use this for "how are we doing versus last year", "YoY growth by category", "year to date versus last year", "what growth does the forecast imply", "is next year's plan realistic against what we sold". Pairs calendar months, holds out incomplete months, and reports growth as a ratio of sums with a like-for-like view. The last-year side is always actual sales, never last year's forecast or stock. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy against actuals — use truegradient-forecast-accuracy. Do NOT use to compare two forecast families with each other — use truegradient-forecast-change.
+name: year-on-year
+description: Compare TrueGradient demand with the same months a year earlier — actual sales against last year's sales, and any forecast family (operational, ML, consensus, the locked plan) against last year's sales — by month, year to date, last twelve months or full-year outlook, in units or value. Use this for "how are we doing versus last year", "YoY growth by category", "year to date versus last year", "what growth does the forecast imply", "is next year's plan realistic against what we sold". Pairs calendar months, holds out incomplete months, and reports growth as a ratio of sums with a like-for-like view. The last-year side is always actual sales, never last year's forecast or stock. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy against actuals — use forecast-accuracy. Do NOT use to compare two forecast families with each other — use forecast-change.
 ---
 
 # Year-on-Year Comparison
@@ -306,6 +306,14 @@ plan growth % (family F) = (Σ F(M) − Σ Sales(M−12)) / |Σ Sales(M−12)| �
 - A family's month is used only for months that have no `Sales` yet. For a month
   that already has `Sales`, the plan side for that month is not a forecast any
   more — use actual growth.
+- **A partial month cannot be a last-year base either.** A plan month M whose
+  base, M − 12, is an incomplete month (the current month, or the month containing
+  `createdAt`) compares a full month of plan with month-to-date sales. Observed
+  live: that one pair read +265% and lifted a 12-month plan figure by 7 points.
+  Leave that pair out, or move the window so that no base month is partial, and
+  say which you did. Also check that `Sales` columns for months after the data
+  date are not real actuals: one workspace carried `Sales` columns two years into
+  the future, all zero.
 - **The interval.** Use `<M> Lower Bound` / `<M> Upper Bound` when they exist.
   Use `<M> P10` / `<M> P90` only when the bounds are absent. Pick one pair, name
   it, and never mix the two. Give the growth range the pair implies and say the
@@ -424,22 +432,23 @@ and in chat give the headline with both windows and the largest caveat.
 
 ## Boundaries
 
-- accuracy, bias or error against actuals → **truegradient-forecast-accuracy**
+- accuracy, bias or error against actuals → **forecast-accuracy**
 - two forecast families compared with each other (not with last year) →
-  **truegradient-forecast-change**
-- a forecast value for a period, with its interval → **truegradient-forecast-lookup**
-- inventory, stock or reorder → **truegradient-supply-inventory**
+  **forecast-change**
+- a forecast value for a period, with its interval → **forecast-lookup**
+- splitting a forecast to series, sites, channels, cities, components or warehouses → **forecast-disaggregation**
+- consensus against TrueGradient's forecast, or whether consensus added value → **consensus-comparison**
+- inventory, stock or reorder → **supply-inventory**
 - **"stock versus last year", "inventory up on last year"** → cannot be answered
   from TrueGradient data. `DOI Details` is today's snapshot and `Supply Plan`
   starts at the current period, so no dataset holds last year's stock position.
   Say so and offer sales versus last year (here) or today's cover (supply).
 - **"this year's forecast versus last year's forecast"** → this skill compares
   against last year's **sales**, never against a forecast. Last year's planning
-  cycle is a different experiment that is not available to read. Offer plan
+  cycle is a different experiment, readable only through **snapshot-comparison** when that run is still visible. Offer plan
   versus last year's sales (step 9). If the user means "how good was the forecast
-  for last year's months", that is **truegradient-forecast-accuracy**.
-- comparing two experiments or planning cycles → not supported; say prior-cycle
-  experiments are not available to read
+  for last year's months", that is **forecast-accuracy**.
+- comparing two runs or planning cycles → **snapshot-comparison**
 - pricing, markdown or promotion → out of scope, say so
 
 ## References

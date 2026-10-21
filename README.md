@@ -1,10 +1,10 @@
 # TrueGradient Planning Analysis — Claude Plugin
 
-Six skills that make Claude answer demand, supply and inventory questions from
+Nine skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.1.0
+Version 1.2.0
 
 ---
 
@@ -30,16 +30,19 @@ per person.
 
 ---
 
-## The six skills
+## The nine skills
 
 | Skill | Answers |
 |---|---|
-| `truegradient-forecast-lookup` | "What is the forecast for SKU X next month?" — with its uncertainty range |
-| `truegradient-forecast-accuracy` | "How accurate have we been? What's our bias? Which categories are worsening?" |
-| `truegradient-forecast-risk` | "Which items carry the most forecast risk? Where should planners focus?" |
-| `truegradient-forecast-change` | "What changed between the locked baseline and the current forecast?" |
-| `truegradient-year-on-year` | "How are we doing versus last year? What growth does next year's forecast imply?" |
-| `truegradient-supply-inventory` | "How does inventory look month on month? When do we run out? What should I reorder? Where's my excess?" |
+| `forecast-lookup` | "What is the forecast for SKU X next month?" — with its uncertainty range |
+| `forecast-accuracy` | "How accurate have we been? What's our bias? Which categories are worsening?" |
+| `forecast-risk` | "Which items carry the most forecast risk? Where should planners focus?" |
+| `forecast-change` | "What changed between the locked baseline and the current forecast?" |
+| `consensus-comparison` | "Did consensus improve on TrueGradient's forecast? How far apart are they for next quarter?" |
+| `forecast-disaggregation` | "Split our top SKUs' forecast by site, channel or city — or down to component and warehouse." |
+| `snapshot-comparison` | "What moved between the last two runs of this pipeline?" — when an earlier run is visible |
+| `year-on-year` | "How are we doing versus last year? What growth does next year's forecast imply?" |
+| `supply-inventory` | "How does inventory look month on month? When do we run out? What should I reorder? Where's my excess?" |
 
 Claude picks the right one from your question. You can also name a skill directly.
 
@@ -124,8 +127,8 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 ### 1. Upload the plugin
 
 1. Claude → **Organization settings → Plugins → Upload a file**
-2. Select `tg-claude-connector-plugin-1.1.0.zip`, as built by `scripts/package.sh`
-3. Confirm **six skills** are detected
+2. Select `tg-claude-connector-plugin-1.2.0.zip`, as built by `scripts/package.sh`
+3. Confirm **nine skills** are detected
 4. Choose an availability level:
 
 | Level | Behaviour | Recommendation |
@@ -193,6 +196,9 @@ How are sales tracking versus last year, by category?
 What growth does next year's forecast imply against what we sold?
 Which categories carry the most forecast risk?
 What changed between the locked baseline and the current forecast?
+Did the consensus forecast improve on TrueGradient's forecast?
+Split next month's forecast for our top 10 SKUs by channel and city.
+What changed between the last two runs of our monthly forecast?
 How does inventory for <a real SKU> look month on month?
 When is <a real SKU> projected to run out?
 What should I reorder now, and how much capital is tied up in excess?
@@ -431,7 +437,7 @@ workspace. Any test marked **Fail (critical)** blocks promotion.
 LICENSE                        proprietary; grants installation and use
 README.md                      this file
 CHANGELOG.md
-TEST-CHECKLIST.md              76 acceptance tests (12 groups)
+TEST-CHECKLIST.md              93 acceptance tests (15 groups)
 scripts/verify-plugin.sh       pre-push checks: versions, descriptions,
                                cross-references, rules that must not regress
 scripts/package.sh             builds the upload archive; refuses a bad layout
@@ -445,12 +451,15 @@ references/
   LOCK-FAMILIES.md             lock families, lags, baseline selection
   COLUMN-SEMANTICS.md          what each column MEANS and which one to pick
 skills/
-  truegradient-forecast-lookup/SKILL.md
-  truegradient-forecast-accuracy/SKILL.md
-  truegradient-forecast-risk/SKILL.md
-  truegradient-forecast-change/SKILL.md
-  truegradient-supply-inventory/SKILL.md
-  truegradient-year-on-year/SKILL.md
+  forecast-lookup/SKILL.md
+  forecast-accuracy/SKILL.md
+  forecast-risk/SKILL.md
+  forecast-change/SKILL.md
+  forecast-disaggregation/SKILL.md
+  consensus-comparison/SKILL.md
+  snapshot-comparison/SKILL.md
+  supply-inventory/SKILL.md
+  year-on-year/SKILL.md
 workbook/
   build_workbook.py            builds every skill's multi-tab Excel workbook
                                from a JSON spec; enforces the data rules

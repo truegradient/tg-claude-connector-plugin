@@ -1,6 +1,6 @@
 ---
-name: truegradient-supply-inventory
-description: Answer supply and inventory questions from TrueGradient inventory-optimization data — stock on hand, total inventory, days of cover, stockout timing, reorder plans, points and quantities, safety stock, in-transit, open POs and inbound supply, excess and dead stock, sales-loss exposure, working capital, and stock transfers. Use for "how does inventory look month on month", "when do we run out of X", "what should I reorder now", "which SKUs are at stockout risk", "where is my excess inventory". When a supply answer is wanted as Excel, a spreadsheet or a list to act on, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Routes time-phased and future-period questions to the Supply Plan dataset and current-snapshot questions to DOI Details. Do NOT use for forecast values, accuracy, bias, risk ranking or forecast version changes — use the truegradient-forecast-* skills. Do NOT use for pricing, markdown or promotion questions.
+name: supply-inventory
+description: Answer supply and inventory questions from TrueGradient inventory-optimization data — stock on hand, total inventory, days of cover, stockout timing, reorder plans, points and quantities, safety stock, in-transit, open POs and inbound supply, excess and dead stock, sales-loss exposure, working capital, and stock transfers. Use for "how does inventory look month on month", "when do we run out of X", "what should I reorder now", "which SKUs are at stockout risk", "where is my excess inventory". When a supply answer is wanted as Excel, a spreadsheet or a list to act on, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Routes time-phased and future-period questions to the Supply Plan dataset and current-snapshot questions to DOI Details. Do NOT use for forecast values, accuracy, bias, risk ranking or forecast version changes — use the forecast-* skills. Do NOT use for pricing, markdown or promotion questions.
 ---
 
 # Supply & Inventory Analysis
@@ -398,20 +398,22 @@ These often compose. Read the supply side here and hand off the rest:
 
 - **"Inventory is wrong because the forecast is wrong."** Get the position and the
   exposure here, then hand the accuracy or bias question to
-  **truegradient-forecast-accuracy**. The `Forecast` variable in `Supply Plan` is
+  **forecast-accuracy**. The `Forecast` variable in `Supply Plan` is
   the demand signal *consumed by* the plan — do not measure accuracy from it.
 - **"Which SKUs should planners look at?"** Forecast-risk ranking is
-  **truegradient-forecast-risk**; stockout and excess triage is here. Both is
+  **forecast-risk**; stockout and excess triage is here. Both is
   fine — keep the two rankings clearly labelled, they answer different questions.
-- **"What's the forecast for November?"** → **truegradient-forecast-lookup**, from
+- **"What's the forecast for November?"** → **forecast-lookup**, from
   `Final DA Data`. Do not read a forecast value off `Supply Plan`.
-- **"Are sales up on last year?"** → **truegradient-year-on-year**, from
+- **"Are sales up on last year?"** → **year-on-year**, from
   `Final DA Data`. Demand growth is not a supply measure.
+- **"Which warehouse gets how much of SKU X's forecast?"** → **forecast-disaggregation**.
+  A warehouse there is where forecast demand is assigned, not a stock position.
 - **"Is stock up on last year?"** → cannot be answered. `DOI Details` is today's
   snapshot and `Supply Plan` starts at the current period: its first period
   equals Σ `Stock_On_Hand`. Neither holds last year's stock position. Say so,
   never estimate one, and offer today's position and cover here or sales versus
-  last year in **truegradient-year-on-year**.
+  last year in **year-on-year**.
 - Note that `Final DA Data*` also appear in this module. Route on the
   **question**, not the module.
 

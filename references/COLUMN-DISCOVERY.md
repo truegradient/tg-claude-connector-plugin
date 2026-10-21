@@ -154,6 +154,23 @@ So:
   obviously a placeholder — `UNKNOWN`, `NA`, `N/A`, `Unmapped`, `Other`, empty
   string — and say which convention you found.
 
+### Step 4f — labels that differ only in spelling split one group into several
+
+A grain value can be stored several ways. Measured live: one workspace's city
+column held **507** distinct labels, many of them one place written differently:
+case (`Bangalore` / `bangalore`), alternate names (`Bengaluru`, `Gurugram` /
+`Gurgaon`), and suffixes (`Udaipur` / `Udaipur (Rajasthan)`). One category also
+appeared as `Atta, Rice & Dal` and `Atta, Rice and Dal`. Grouping by such a
+column ranks one place as several, and a relabelled place shows as lost under its
+old label and new under its new one.
+
+- Scan the distinct values of any grouping column you report by, and flag
+  variants that differ only in case, punctuation, a suffix or a known alternate
+  name.
+- **Never merge them silently.** Report by the stored label, say the variants
+  exist, and if you show a merged view, label the merge as your own judgement.
+- Trim and compare case-insensitively when matching a name the user gives.
+
 ### Step 5 — detect optional columns before relying on them
 
 Check the live list for each of these. Presence changes your approach:

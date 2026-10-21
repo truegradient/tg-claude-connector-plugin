@@ -1,6 +1,6 @@
 ---
-name: truegradient-forecast-change
-description: Compare two TrueGradient forecast families within one experiment and report exactly what changed — for example the frozen baseline versus the current operational forecast, the model output versus a planner-reviewed view, or the operational versus the consensus forecast. Use this for "what changed since the locked forecast", "why did the forecast for SKU X change", "how far has consensus moved off the plan", "what moved between the baseline and final forecast". Compares two column families in the same experiment; prior planning cycles are not kept, so cross-cycle comparison is not supported. States that TrueGradient has no version history or audit trail, so causes cannot be evidenced beyond recorded planner comments. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy against actuals — use truegradient-forecast-accuracy.
+name: forecast-change
+description: Compare two TrueGradient forecast families within one experiment and report exactly what changed — for example the frozen baseline versus the current operational forecast, the model output versus a planner-reviewed view, or the operational versus the consensus forecast. Use this for "what changed since the locked forecast", "why did the forecast for SKU X change", "how far has consensus moved off the plan", "what moved between the baseline and final forecast". Works within one experiment; for two runs of a pipeline use snapshot-comparison. States that no version history or audit trail exists, so causes cannot be evidenced beyond recorded planner comments. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy against actuals — use forecast-accuracy. Do NOT use for consensus against TrueGradient's model or its value add — use consensus-comparison.
 ---
 
 # Forecast Change Comparison
@@ -57,13 +57,12 @@ Every comparison is between two column families inside a **single** experiment:
 the baseline against the current plan, the model against a planner-reviewed view,
 or the plan against consensus. Same rows, same grain, same experiment.
 
-**Comparison across experiments or planning cycles is not supported.** The roster
-only exposes the workspace's live Completed experiments, and prior-cycle
-experiments are usually absent. If the user asks to compare cycles, say that
-TrueGradient keeps no prior-cycle experiment to read, and offer the family
-comparison that answers the nearest version of their question — typically the
-frozen lock against the current `Forecast`, which is what moved since the
-baseline was taken.
+**Comparison across experiments or planning cycles is a different skill.** Two
+runs of one pipeline go to **snapshot-comparison**, which first checks that a
+second run is visible. The roster shows only live Completed experiments, so an
+earlier run is often absent; that skill then offers this one's nearest
+comparison, typically the frozen lock against the current `Forecast`, which is
+what moved since the baseline was taken.
 
 Common pairings:
 
@@ -210,10 +209,9 @@ Source
 ## When only one version exists
 
 If the target month carries only one forecast family, say exactly that and offer
-what *is* comparable in the same experiment. If the user names a prior cycle, say
-that prior-cycle experiments are not available to read. Do not compare a different
-month, and do not compare a different experiment, and present either as a version
-change.
+what *is* comparable in the same experiment. If the user names a prior cycle, hand
+off to **snapshot-comparison**. Do not compare a different month, and do not
+compare a different experiment here, and present either as a version change.
 
 ## Excel workbook output
 
@@ -260,10 +258,12 @@ no-history caveat.
 
 ## Boundaries
 
-- accuracy against actuals → **truegradient-forecast-accuracy**
-- a single current value → **truegradient-forecast-lookup**
-- risk ranking → **truegradient-forecast-risk**
-- this year against last year, growth, YoY → **truegradient-year-on-year**
+- accuracy against actuals → **forecast-accuracy**
+- a single current value → **forecast-lookup**
+- risk ranking → **forecast-risk**
+- this year against last year, growth, YoY → **year-on-year**
+- splitting a forecast to series, sites, channels, cities, components or warehouses → **forecast-disaggregation**
+- consensus against TrueGradient's forecast, or whether consensus added value → **consensus-comparison**
 - "who changed it" → **cannot be answered at all.** No authorship is recorded. Say
   so plainly rather than guessing from column names.
 

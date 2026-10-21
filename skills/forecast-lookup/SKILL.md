@@ -1,6 +1,6 @@
 ---
-name: truegradient-forecast-lookup
-description: Look up the final forecast, actual sales, or forecast uncertainty interval for a specific product, SKU, variant, category, brand, channel, customer, region, or time period from TrueGradient demand planning data. Use this when the user asks what the forecast or actual IS for something specific — "what's the forecast for SKU X next month", "how many units for the North region in Q3", "show me the forecast range for this category", "what did we actually sell last month". Also use to compare a single entity's forecast against its own actuals. When the lookup spans many entities or periods and is wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy, error or bias metrics across many entities — use truegradient-forecast-accuracy. Do NOT use for risk ranking — use truegradient-forecast-risk. Do NOT use for comparing two forecast versions — use truegradient-forecast-change.
+name: forecast-lookup
+description: Look up the final forecast, actual sales, or forecast uncertainty interval for a specific product, SKU, variant, category, brand, channel, customer, region, or time period from TrueGradient demand planning data. Use this when the user asks what the forecast or actual IS for something specific — "what's the forecast for SKU X next month", "how many units for the North region in Q3", "show me the forecast range for this category", "what did we actually sell last month". Also use to compare a single entity's forecast against its own actuals. When the lookup spans many entities or periods and is wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for accuracy, error or bias metrics across many entities — use forecast-accuracy. Do NOT use for risk ranking — use forecast-risk. Do NOT use for comparing two forecast versions — use forecast-change.
 ---
 
 # Forecast Lookup
@@ -239,12 +239,14 @@ the file.
 
 Hand off rather than answering:
 
-- accuracy, error, bias, WAPE, MAPE → **truegradient-forecast-accuracy**
-- ranking by risk, "where to focus" → **truegradient-forecast-risk**
-- comparing two forecast families → **truegradient-forecast-change**
-- this year against last year, growth, YoY → **truegradient-year-on-year**
+- accuracy, error, bias, WAPE, MAPE → **forecast-accuracy**
+- ranking by risk, "where to focus" → **forecast-risk**
+- comparing two forecast families → **forecast-change**
+- this year against last year, growth, YoY → **year-on-year**
+- splitting a forecast to series, sites, channels, cities, components or warehouses → **forecast-disaggregation**
+- consensus against TrueGradient's forecast, or whether consensus added value → **consensus-comparison**
 
-Hand off to **truegradient-supply-inventory**:
+Hand off to **supply-inventory**:
 
 - inventory (stock on hand, days of inventory, reorder, stock transfer, excess,
   stockout timing)

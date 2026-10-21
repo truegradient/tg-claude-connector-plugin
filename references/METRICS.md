@@ -116,7 +116,10 @@ When the question *is* a consensus question:
 - Name the family explicitly: "against `Consensus Forecast` (planner-agreed, not
   a frozen baseline)" — in the answer and in the provenance footer.
 - Report the global-lock figure alongside it whenever a `Locked ...` family
-  exists, so the reader can see the frozen measurement too.
+  exists, so the reader can see the frozen measurement too — **computed with the
+  same error method as the consensus figure** (§10b). A row-level lock error beside
+  a netted consensus error is not a comparison. Comparing the two is
+  `consensus-comparison`'s job.
 - Never present a consensus figure as *the* forecast accuracy of the workspace.
 
 **Never substitute consensus for a missing lock.** If no `Locked ...` family
@@ -323,9 +326,9 @@ delta_pct     = (delta / |old_value|) * 100        if old_value != 0
 When `old_value = 0`, report the absolute change and say the percentage is
 undefined rather than printing infinity or a huge number.
 
-Always name both versions precisely. Both must be column families in the **same**
-experiment — prior planning cycles are usually not present in the live roster, so
-cross-experiment comparison is not supported. A common pairing is `Forecast` vs
+Always name both versions precisely. Within one experiment they are two column
+families; across two runs of one pipeline they are the same family in each run
+(§12, `snapshot-comparison`). A common pairing is `Forecast` vs
 `Consensus Forecast`: operational plan against the planner-agreed number.
 
 ---
@@ -402,7 +405,7 @@ RMSE           = √( (1/n) · Σ (A − F)² )      in units; penalises large m
 
 ## 9. Year on year
 
-Used by `truegradient-year-on-year`. Pure arithmetic on sums; no accuracy
+Used by `year-on-year`. Pure arithmetic on sums; no accuracy
 involved.
 
 ### 9a. Pairing
@@ -490,3 +493,108 @@ With unit growth `g_u` and value growth `g_v` on the same window and items:
 
 Growth to 1 decimal place with its sign (`+7.9%`, `−4.3%`), units whole. Always
 give both windows: "Jan–Jul 2026 vs Jan–Jul 2025".
+
+---
+
+## 10. Consensus versus TrueGradient: value add and gap
+
+Used by `consensus-comparison`. §1a still governs consensus inside the
+accuracy skill; this section governs comparing the two.
+
+### 10a. The two sides
+
+| Months | Consensus | TrueGradient |
+|---|---|---|
+| past (value add) | `<M> Consensus Forecast` | the global lock `<M> Locked ML Forecast [Lag_N]`, one lag (`LOCK-FAMILIES.md`) |
+| future (gap) | `<M> Consensus Forecast` | `<M> ML Forecast` |
+
+Value-add months need `Sales`, consensus and the lock. Drop the current month and
+the month containing `createdAt`.
+
+### 10b. One error method for both sides
+
+```
+Row-level   both <M> Consensus Forecast Abs Error and <M> <lock> Abs Error exist
+            err_side = Σ that side's Abs Error column
+Netted      otherwise, at ONE grain g for both sides:
+            err_side = Σ_groups |Σ Sales − Σ side|
+```
+
+`Σ|A−F| ≥ |ΣA−ΣF|` at every grain, so mixing methods is never neutral: the
+lock's stored row-level error against a netted consensus error makes consensus
+look better by construction. With the netted method, the finer `g` is, the closer
+both sides come to row-level, and the full series grain *is* row-level. Name `g`.
+
+### 10c. Formulas
+
+```
+acc_side    = (1 − Σerr_side / ΣSales) × 100          1 − WMAPE, may be negative
+value add   = acc_C − acc_TG                          points; > 0 consensus helped
+units saved = Σerr_TG − Σerr_C                        rank groups by this
+bias_side   = (Σside − ΣSales) / ΣSales × 100         signed, 0 = unbiased
+gap         = ΣC − ΣModel        gap % = gap / |ΣModel| × 100
+gross gap   = Σ_groups |gap_group|                     beside the net gap
+```
+
+Group figures come from the group's own sums, never an average of item
+percentages. Fewer than 3 value-add months: not yet meaningful.
+
+### 10d. Mandatory disclosures
+
+Consensus is not frozen; the TrueGradient side's family and lag; the error method
+and grain; the months used and excluded. With no consensus column, value add
+cannot be measured, and a `Forecast` versus `ML Forecast` gap is labelled
+"operational plan versus model", never consensus.
+
+---
+
+## 11. Disaggregation: shares and add-back
+
+Used by `forecast-disaggregation`.
+
+### 11a. Series split
+
+```
+series value = Σ <M> <family> over the rows of one series (exactly one row)
+SKU total    = Σ over the SKU's series
+share        = series value / SKU total
+add-back     = proved by counts: returned series = the SKU's row count n,
+               every series n = 1, returned < page_size. Then Σ series = SKU
+               total by construction; otherwise the read was truncated
+top-SKU share of month = Σ top SKUs / portfolio total
+```
+
+### 11b. Component split
+
+```
+component total   = Σ disaggregated value over its rows        (fractional; round last)
+warehouse share   = Σ value at warehouse / component total
+cell difference   = component value − parent value             per component × channel × region
+                    where the parent SKU code equals the component code
+```
+
+Component units are not parent units: a bundle expands into several components,
+so portfolio totals do not reconcile. Report cell differences; never explain them
+or fill them with an inferred bill of materials.
+
+---
+
+## 12. Snapshot comparison: two runs of one pipeline
+
+Used by `snapshot-comparison`. A = the older run, B = the newer, same `tag` and
+module, same family, same target month, matched on the grain both share.
+
+```
+change      = ΣB − ΣA                 items present in both
+change %    = change / |ΣA| × 100     undefined when ΣA = 0
+new         = in B only               listed, never a change from 0
+dropped     = in A only               listed, never a change to 0
+restated    = ΣSales_B(M) − ΣSales_A(M)            months with Sales in both runs
+A's error   = ΣForecast_A(M) vs ΣSales_B(M)        months forecast in A, actual in B
+```
+
+- Rank by absolute change. Totals are over matched items, with new and dropped on
+  their own lines so each run's total can be rebuilt.
+- Forecast movement, restated history and A's error are reported separately.
+- B is closer to every target month, so part of any movement is horizon
+  convergence. Say so.

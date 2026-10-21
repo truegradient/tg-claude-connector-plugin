@@ -1,6 +1,6 @@
 ---
-name: truegradient-forecast-accuracy
-description: Measure TrueGradient forecast accuracy, bias, or error trend over past months — accuracy percentages computed as 1 − WMAPE, whether the forecast systematically over- or under-forecasts, and which products, categories, channels or regions are improving or worsening. Use this for "how accurate is our forecast", "what's our forecast bias", "which categories have worsening WAPE", "what's the error trend", "are we over-forecasting", "how good was last quarter's forecast". Measures only months where both actual sales and the frozen baseline exist; the incomplete current month is kept out of the pooled figure but shown as a partial month-to-date point. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for a forward-looking forecast value — use truegradient-forecast-lookup. Do NOT use for ranking items by business risk — use truegradient-forecast-risk.
+name: forecast-accuracy
+description: Measure TrueGradient forecast accuracy, bias, or error trend over past months — accuracy percentages computed as 1 − WMAPE, whether the forecast systematically over- or under-forecasts, and which products, categories, channels or regions are improving or worsening. Use this for "how accurate is our forecast", "what's our forecast bias", "which categories have worsening WAPE", "are we over-forecasting", "how good was last quarter's forecast". Measures only months where both actual sales and the frozen baseline exist; the incomplete current month is kept out of the pooled figure but shown as a partial month-to-date point. When wanted as Excel or an export, it builds a multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question. Do NOT use for a forward-looking forecast value — use forecast-lookup. Do NOT use for risk ranking — use forecast-risk. Do NOT use for consensus accuracy — use consensus-comparison.
 ---
 
 # Forecast Accuracy & Bias
@@ -24,9 +24,9 @@ These apply even if you cannot load the reference files:
    reliable discriminator: anchor on the trailing space (`"Locked "` vs `"Lock "`), because
    `contains "Lock"` matches both. See `../../references/LOCK-FAMILIES.md`.
 3. The actual side is **`<date> Sales`** unless the user explicitly asks for raw.
-   The forecast side is the global lock — the one exception is an explicit
-   **consensus** question, which uses `<date> Consensus Forecast` and must be
-   labelled as not a frozen baseline. See "Consensus questions" below.
+   The forecast side is the global lock. A **consensus** question goes to
+   consensus-comparison, which scores both sides with one error
+   method (step 4b).
 4. **Never send** `wmape`, `accuracy`, `bias`, `mape`, `mae`, `rmse` or
    `sum_columns` as aggregation functions. They are broken in this connector —
    they silently lose the actual-column argument. Compute from `sum`. See
@@ -149,28 +149,20 @@ Never add the partial month to `Σ err` / `Σ act`, and never include it in a gr
 ranking — one item's partial month against another's full month is not a
 comparison.
 
-**4b. Consensus questions.**
+**4b. Consensus questions — hand off.**
 
-When — and only when — the user explicitly asks about consensus ("how accurate is
-the consensus forecast", "is consensus over-forecasting", "consensus vs actuals"),
-swap the forecast side to `<date> Consensus Forecast` and run the identical
-procedure: same month-eligibility test with the consensus column in the lock
-column's place, same formulas, current month still held out of the pooled figure
-(and still shown as partial, per step 4a).
+A question about the consensus forecast's accuracy ("how accurate is the
+consensus forecast", "is consensus over-forecasting", "consensus vs actuals",
+"did consensus beat the model") goes to **consensus-comparison**.
+It scores consensus and the global lock with one error method at one grain.
+Do not answer it here. This skill's lock figure uses the row-level `Abs Error`
+column, and consensus usually has none, so the two figures side by side would
+compare a row-level error with a netted one: consensus would win by
+construction (`METRICS.md` §10b).
 
-- Detect the column first. It is **absent in many workspaces** — say so rather
-  than answering on a different family.
-- Check for `<date> Consensus Forecast Abs Error` first — it is in the documented
-  schema, though absent from both observed workspaces. Present → use it, same as
-  the lock's own abs-error column. Absent → the numerator is the netted fallback
-  `|Σactual − Σconsensus|`, and say that you used it.
-- Consensus is **not frozen** — it can be edited after the fact, so say the figure
-  is not a frozen-baseline measurement, and name the family in the answer and the
-  footer.
-- Show the global-lock figure alongside whenever a `Locked ...` family exists.
-- **Never** use consensus because the lock is missing. A missing lock still means
-  no accuracy can be measured; you may then offer a clearly-labelled consensus
-  figure, but only after saying that.
+If you are already mid-answer and the user adds a consensus question, say it is
+answered by that skill. **Never** use consensus because the lock is missing: a
+missing lock still means no accuracy can be measured.
 
 Full detail: `../../references/METRICS.md` §1a.
 
@@ -471,11 +463,14 @@ headline with its window, family and lag, and the largest caveat.
 
 ## Boundaries
 
-- a forward-looking forecast value → **truegradient-forecast-lookup**
-- ranking by risk, prioritisation → **truegradient-forecast-risk**
-- comparing two forecast families → **truegradient-forecast-change**
-- this year against last year, growth, YoY → **truegradient-year-on-year**
-- inventory, supply, stock or reorder → **truegradient-supply-inventory**
+- a forward-looking forecast value → **forecast-lookup**
+- ranking by risk, prioritisation → **forecast-risk**
+- comparing two forecast families → **forecast-change**
+- this year against last year, growth, YoY → **year-on-year**
+- splitting a forecast to series, sites, channels, cities, components or warehouses → **forecast-disaggregation**
+- consensus against TrueGradient's forecast, or whether consensus added value → **consensus-comparison**
+- what moved between two runs of a pipeline → **snapshot-comparison**
+- inventory, supply, stock or reorder → **supply-inventory**
 - pricing, markdown or promotion → out of scope, say so
 
 ## References
