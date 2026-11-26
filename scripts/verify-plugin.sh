@@ -98,8 +98,12 @@ missing=$(grep -rhno '\.\./\.\./workbook/[A-Za-z_-]*\.[a-z]*' --include='*.md' s
 sect "Workbook"
 # Every skill can answer as a multi-tab workbook, and says so where routing
 # reads it. The builder is shared, so one broken edit breaks every skill.
+# Artifact skills build a published page, not a workbook, so they are exempt.
 for f in skills/*/SKILL.md; do
   dir=$(basename "$(dirname "$f")")
+  case "$dir" in
+    demand-planning-dashboard) ok "$dir  artifact skill — exempt from workbook output"; continue ;;
+  esac
   sed -n 's/^description: //p' "$f" | grep -q 'multi-tab workbook (Read Me, Summary, detail and exception tabs) whose tabs are chosen from the question' \
     && ok "$dir  description offers the workbook" \
     || bad "$dir  description no longer says it builds the multi-tab workbook"

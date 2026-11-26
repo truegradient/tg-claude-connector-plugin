@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.3.0 — 2026-11-26
+
+Adds the demand-planning dashboard skill, so clients get it by enabling and
+updating the plugin instead of uploading a separate skill file. Minor release:
+no existing skill or metric definition changed.
+
+### Added
+
+- **`demand-planning-dashboard`.** Builds, extends or validates a live
+  TrueGradient demand-planning and inventory-health dashboard, published as a
+  Claude artifact (Forecast, Accuracy, Top Movers, Anomalies, Pacing, Reorder &
+  Health, Supply Plan, Transfers, Locations, YoY, ABC Segmentation, Forecast by
+  Experiment). The page reads TrueGradient live through the connector's
+  `tg_dp_*` tools; every number is computed server-side, and the page holds no
+  data. Carries its own references (calculations, data model, tab layouts,
+  design system, runtime contract, build prompt) and scripts (`check_page.js`
+  pre-publish check, `tg_calc.js` audit reference and its tests). Previously
+  distributed as the standalone `tg-demand-planning-dashboard` skill.
+
+### Changed
+
+- `verify-plugin.sh` exempts artifact skills from the workbook-output checks:
+  the dashboard skill publishes a page, not a workbook.
+- Plugin and marketplace descriptions now say ten skills and mention the
+  dashboard; `dashboard` added to keywords.
+
 ## 1.2.0 — 2026-10-21
 
 Three new skills, and every skill renamed so it can be called directly. Minor

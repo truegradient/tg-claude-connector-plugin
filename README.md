@@ -1,10 +1,10 @@
 # TrueGradient Planning Analysis — Claude Plugin
 
-Nine skills that make Claude answer demand, supply and inventory questions from
+Ten skills that make Claude answer demand, supply and inventory questions from
 **final, approved TrueGradient data only** — with the right metric definitions,
 the right column families, and explicit provenance on every answer.
 
-Version 1.2.0
+Version 1.3.0
 
 ---
 
@@ -30,7 +30,7 @@ per person.
 
 ---
 
-## The nine skills
+## The ten skills
 
 | Skill | Answers |
 |---|---|
@@ -43,8 +43,19 @@ per person.
 | `snapshot-comparison` | "What moved between the last two runs of this pipeline?" — when an earlier run is visible |
 | `year-on-year` | "How are we doing versus last year? What growth does next year's forecast imply?" |
 | `supply-inventory` | "How does inventory look month on month? When do we run out? What should I reorder? Where's my excess?" |
+| `demand-planning-dashboard` | "Build our live demand-planning dashboard." — publishes a multi-tab planning cockpit (Forecast, Accuracy, Top Movers, Anomalies, Pacing, Reorder & Health, Supply Plan, Transfers, YoY, ABC, Forecast by Experiment) as a Claude artifact that reads TrueGradient live |
 
 Claude picks the right one from your question. You can also name a skill directly.
+
+### The dashboard skill
+
+`demand-planning-dashboard` builds one published artifact rather than a chat answer.
+Ask: *"Use the TrueGradient demand planning dashboard skill to build my Integrated
+Business Planning dashboard."* Every number is computed on TrueGradient's server by
+the connector's `tg_dp_*` tools; the page holds no data, so it stays live and can be
+shared. On first open each viewer is asked to allow the TrueGradient connector, and
+sees data through their own login. Building it needs Artifacts and code execution
+turned on in Claude.
 
 ### How the supply skill routes
 
@@ -61,7 +72,7 @@ which dataset and which measures produced the number.
 
 ### Answers as Excel workbooks
 
-Every skill can answer as a multi-tab workbook: ask for Excel, a spreadsheet,
+Every analysis skill can answer as a multi-tab workbook (the dashboard skill builds an artifact instead): ask for Excel, a spreadsheet,
 an export or a list to act on, and Claude offers one whenever an answer runs to
 more than about 20 rows. The tabs are chosen from the question, always in the
 same order:
@@ -127,8 +138,8 @@ Org-wide rollout via an uploaded archive, as an alternative to the routes above.
 ### 1. Upload the plugin
 
 1. Claude → **Organization settings → Plugins → Upload a file**
-2. Select `tg-claude-connector-plugin-1.2.0.zip`, as built by `scripts/package.sh`
-3. Confirm **nine skills** are detected
+2. Select `tg-claude-connector-plugin-1.3.0.zip`, as built by `scripts/package.sh`
+3. Confirm **ten skills** are detected
 4. Choose an availability level:
 
 | Level | Behaviour | Recommendation |
