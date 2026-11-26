@@ -19,6 +19,12 @@ no existing skill or metric definition changed.
   pre-publish check, `tg_calc.js` audit reference and its tests). Previously
   distributed as the standalone `tg-demand-planning-dashboard` skill.
 
+- **Global reports in `references/TOOL-GUIDE.md`.** New §7 covers the three
+  connector tools that read the company's saved Global Reports (the app's
+  Reports page): `tg_list_global_reports`, `tg_global_report_info` and
+  `tg_fetch_global_report`. They read each report's stored latest result;
+  nothing is re-run.
+
 ### Changed
 
 - `verify-plugin.sh` exempts artifact skills from the workbook-output checks:

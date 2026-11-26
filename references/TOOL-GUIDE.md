@@ -1,8 +1,10 @@
 # TrueGradient Connector Tool Guide
 
-The five read-only tools, how to choose between them, and what their failures mean.
+The read-only tools, how to choose between them, and what their failures mean.
+Experiment data uses the five tools in §1–§2; the company's saved Global Reports
+(the app's Reports page) use the three tools in §7.
 
-All five are read-only. None can modify TrueGradient data. Your company is never
+All of them are read-only. None can modify TrueGradient data. Your company is never
 an argument — it comes from your signed login token and is re-verified on every
 data call, so reaching another company's data is structurally impossible.
 
@@ -473,3 +475,64 @@ check for an `error` key before using a result.
 **What this example must never do:** request `2025-01-31 Locked ML Forecast Lag_4`
 — that column does not exist. Only the 5 real baseline months are usable. Nor may
 it fill the gap with a secondary `Lock ...` family at a different lag.
+
+---
+
+## 7. Global reports — the app's Reports page
+
+Global reports are saved SQL/Python analyses the company keeps on the Reports
+page. Each one's **latest computed result is stored**; these tools read that
+stored result — nothing is re-run. Use them when the user names a report, asks
+"what's in our reports", or wants an artifact built from a report.
+
+```
+tg_list_global_reports(tag?)           every report, in the sidebar's order
+      ↓
+tg_global_report_info(report_id)       columns, size, sample, saved filters, chart plan
+      ↓
+tg_fetch_global_report(report_id, …)   the rows — plain pages or a computed read
+```
+
+**List.** Returns every report the sidebar shows, same order, same name
+(`display_name`) and grey subtitle (`subtitle`), across all pipelines. Pass `tag`
+only when the user names a pipeline. Match a user's wording against
+`display_name` and `subtitle`; if two reports fit, ask which.
+
+**Status — read it before anything else.**
+
+| `status` | Meaning | What to do |
+|---|---|---|
+| `ready` | result exists | proceed |
+| `unverified` | existence not confirmed | proceed; trust the info call |
+| `no_result` | saved but never generated (or generation failed) | say so; do not present it as "empty" |
+| `missing_result_path` / `untrusted_result_path` / `unreadable_entry` | cannot be opened | say it cannot be opened in the app's current state |
+
+**Freshness.** `freshness.state` other than `current` means the stored result
+predates the pipeline's latest run (`newer_run_available`, `source_updated`) or a
+run is in progress (`newer_run_in_progress`). The app refreshes a report only when
+someone opens it. Present the numbers, and say they reflect the last generated
+result; `open_in_app_url` (when present) is where the user refreshes it.
+
+**Info, then fetch.** Call `tg_global_report_info` once: it gives `total_rows`,
+`columns`, `sample_rows`, the report's `saved_filters` and `chart`. Results are
+usually small — the fetch default `page_size` is 200 (max 1000), so one call is
+often the whole report. Use `has_more`/`next_page` otherwise. Computed reads
+(`group_by`, `aggregations`, `sort_by`, `limit`, …) work exactly as in §2.5,
+including its caveats: no envelope names as aliases, no `min`/`max` on numbers.
+
+**Building the artifact.** Mirror what the app shows:
+
+- `chart.enabled: true` → the app shows a chart by default; include one.
+- `chart.plan` is the chart the app draws: `layout: "long"` = `time_column` on the
+  x-axis with each `metric_columns` entry summed per period; `layout: "wide"` =
+  each date column summed across rows, plotted in date order. `null` = no chart
+  (table only).
+- Pass `chart.fetch_args` to `tg_fetch_global_report` unchanged to get that
+  chart's data (sums come back as `sum_<column>`).
+- Always include the table, titled with `display_name`, and a provenance footer:
+  report name, source experiment(s) from `source.experiments`, generated time,
+  and the freshness note when not `current`.
+
+**Errors.** `No global report '<x>'` → re-list and use a `report_id`, never a
+guess. `The report's saved result could not be read` → report it as not yet
+generated; do not retry in a loop.
